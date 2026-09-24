@@ -1,0 +1,10 @@
+{
+  "format": "heaproom-patch",
+  "patchId": "patch-entryb-size",
+  "derivedFrom": "snap-baseline",
+  "description": "只改动一个直接来源：obj-0004 的 shallow size 从 128 B 改为 256 B，其余材料不动。",
+  "newSnapshotId": "snap-baseline-p1",
+  "changes": [
+    {"op": "replace-size", "objectId": "obj-0004", "size": {"raw": "256", "unit": "B"}}
+  ]
+}

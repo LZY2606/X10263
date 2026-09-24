@@ -1,0 +1,60 @@
+{
+  "format": "heaproom-judgments",
+  "formatVersion": 1,
+  "caseName": "堆影取证室：内存快照、弱引用边与保留路径候选",
+  "judgments": [
+    {
+      "judgmentId": "J1-dominator-on-reachable-only",
+      "statement": "支配树只在可达图上构建；不可达对象（如 obj-0010 孤儿）不出现在支配父级中。",
+      "evidence": {"snapshot": "snap-baseline", "unreachableObject": "obj-0010"},
+      "appliesWhen": {"weakPolicy": "WEAK_IGNORED", "alsoExcluded": "obj-0005"}
+    },
+    {
+      "judgmentId": "J2-weak-explicit-policy",
+      "statement": "弱引用是否保活由显式参数版本决定：v1 WEAK_IGNORED 时 obj-0005 不可达；v2 WEAK_KEEP_ALIVE 时 obj-0005 可达且计入保留大小。",
+      "evidence": {"object": "obj-0005", "edge": "obj-0002 -WEAK-> obj-0005"}
+    },
+    {
+      "judgmentId": "J3-equal-length-root-paths",
+      "statement": "obj-0006 有两条等长 root 路径，全部保留；要求唯一结论时返回语义无解而不是任选一条。",
+      "evidence": {
+        "snapshot": "snap-baseline",
+        "object": "obj-0006",
+        "paths": [
+          ["obj-0007", "obj-0009", "obj-0006"],
+          ["obj-0001", "obj-0008", "obj-0006"]
+        ]
+      }
+    },
+    {
+      "judgmentId": "J4-address-not-identity",
+      "statement": "obj-0011 与 obj-0012 地址同为 0xCAFEBABE 但身份不同；二者都保留，诊断中标注重复地址。",
+      "evidence": {"address": "0xCAFEBABE", "identities": ["obj-0011", "obj-0012"]}
+    },
+    {
+      "judgmentId": "J5-class-rename-not-add-remove",
+      "statement": "snap-v2 中 cls-lru(com.acme.LruCache) renamedFrom cls-cache(com.acme.Cache)；类群差异标记 RENAMED，而不是 REMOVED+ADDED。",
+      "evidence": {"snapshotA": "snap-baseline", "snapshotB": "snap-v2", "classIdentity": "cls-cache"}
+    },
+    {
+      "judgmentId": "J6-incomplete-preserved",
+      "statement": "不完整块 chunk:7@offset:4096 与悬空边 obj-0003->obj-9999 原样保留并带位置诊断；缺失对象不伪装为空对象。",
+      "evidence": {"position": "chunk:7@offset:4096", "danglingRef": "obj-9999"}
+    },
+    {
+      "judgmentId": "J7-unconvertible-unit-stays-raw",
+      "statement": "obj-0014 的大小 '3 blocks' 无法转换为字节基准，原值留在原位并挂诊断，保留大小计算不把它当 0 或默认值。",
+      "evidence": {"object": "obj-0014", "quantity": {"raw": "3", "unit": "blocks"}}
+    },
+    {
+      "judgmentId": "J8-cycle-graph",
+      "statement": "obj-0003 <-> obj-0004 构成循环图，支配树算法在该图上仍终止；二者共同受 obj-0002 支配。",
+      "evidence": {"edges": ["obj-0003->obj-0004", "obj-0004->obj-0003"]}
+    }
+  ],
+  "failureModes": {
+    "BUDGET_EXHAUSTED": "资源预算耗尽是独立结果（带 scope/limit/consumed），样例：把 nodeBudget 调到 4 重算 snap-baseline。",
+    "CORRUPT_FORMAT": "格式损坏是独立结果（带 position/message），半写导出包与坏 JSON 都不会污染现有数据库。",
+    "SEMANTIC_UNSOLVABLE": "语义无解是独立结果：多等长路径要求唯一、互相冲突的人工决定未撤回、缺少显式弱引用策略。"
+  }
+}
