@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>堆影取证室 · 内存快照 / 弱引用边 / 保留路径候选</title>
+<link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+<header>
+  <h1>堆影取证室</h1>
+  <div class="sub">内存快照 · 对象图 · 支配树 · 保留大小 · root 路径 · 双快照类群差异</div>
+  <div class="workflow" id="workflow">
+    <span>① 导入</span><span>→</span><span>② 核对原始材料</span><span>→</span>
+    <span>③ 触发边界组合</span><span>→</span><span>④ 显式弱引用策略</span><span>→</span>
+    <span>⑤ 复核：图/支配/保留/路径/类群</span><span>→</span><span>⑥ 导出再导入</span>
+  </div>
+</header>
+
+<div class="toolbar">
+  <label>快照
+    <select id="snapshotSelect" data-stable-id="ui:snapshot-select"></select>
+  </label>
+  <label>参数版本 <select id="versionSelect" data-stable-id="ui:version-select"></select></label>
+  <button id="btnAnalyze">重算/查看</button>
+  <span class="sep"></span>
+  <label class="chk"><input type="checkbox" id="weakKeepAlive"/> weakKeepAlive（弱引用保活）</label>
+  <label class="chk"><input type="checkbox" id="internalKeepAlive"/> internalKeepAlive（内部边保活）</label>
+  <input id="paramReason" placeholder="参数修订理由" class="reason"/>
+  <button id="btnParams">保存参数修订</button>
+  <span class="sep"></span>
+  <button id="btnImport">导入 HSF</button>
+  <button id="btnPatch">施加局部补丁</button>
+  <button id="btnExport">导出项目</button>
+  <label class="filebtn">导入项目<input type="file" id="importProjectFile" accept="application/json"/></label>
+</div>
+
+<div id="metaBar" class="metabar" data-stable-id="ui:meta-bar"></div>
+
+<main>
+  <section class="col">
+    <h2>事件流（点击回到任一旧事件）</h2>
+    <div id="events" class="events" data-stable-id="panel:events"></div>
+    <h2>时间基准与材料核对</h2>
+    <div id="materials" class="materials" data-stable-id="panel:materials"></div>
+  </section>
+
+  <section class="col wide">
+    <h2>对象图（SVG，稳定身份=objectId）</h2>
+    <div id="graphWrap" class="graph" data-stable-id="panel:graph"></div>
+    <div id="objectDetail" class="detail" data-stable-id="panel:object-detail">
+      点击图中节点查看：支配父级、保留大小、全部等长 root 路径。
+    </div>
+    <div class="grid2">
+      <div>
+        <h2>支配父级与保留大小</h2>
+        <div id="domTable" data-stable-id="panel:dominators"></div>
+      </div>
+      <div>
+        <h2>泄漏路径候选</h2>
+        <div id="leakList" data-stable-id="panel:leaks"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="col">
+    <h2>root 路径（等长全保留）</h2>
+    <div id="paths" data-stable-id="panel:paths"></div>
+    <h2>双快照类群差异</h2>
+    <div class="diffctrl">
+      <select id="diffA"></select> vs <select id="diffB"></select>
+      <button id="btnDiff">计算差异</button>
+    </div>
+    <div id="diffPanel" data-stable-id="panel:diff"></div>
+    <h2>反例档案（采纳 / 未采纳）</h2>
+    <div id="casePanel" data-stable-id="panel:casepack"></div>
+  </section>
+</main>
+
+<dialog id="dlgImport">
+  <h3>导入 HSF 原始快照</h3>
+  <input id="importName" placeholder="来源名称（如：运行时导出-20260919）"/>
+  <textarea id="importText" rows="14" placeholder="粘贴 HSF/1 ..."></textarea>
+  <div class="dlgbtns"><button id="dlgImportGo">导入（保留原始表示）</button><button id="dlgImportCancel">取消</button></div>
+</dialog>
+
+<dialog id="dlgPatch">
+  <h3>施加只影响局部依赖的源数据改动</h3>
+  <input id="patchName" placeholder="补丁名（如 pinned-entry）"/>
+  <textarea id="patchText" rows="8" placeholder="仅 class/object/edge/root 行"></textarea>
+  <input id="patchDesc" placeholder="说明：改动哪个直接来源、期望影响范围"/>
+  <div class="dlgbtns"><button id="dlgPatchGo">施加（生成新版本快照）</button><button id="dlgPatchCancel">取消</button></div>
+</dialog>
+
+<dialog id="dlgDecision">
+  <h3>对证据做决定</h3>
+  <div id="decisionSubject"></div>
+  <textarea id="decisionRationale" rows="3" placeholder="理由：哪条材料、哪版规则"></textarea>
+  <label>审阅者 <input id="decisionReviewer" value="reviewer"/></label>
+  <div class="dlgbtns">
+    <button data-v="ACCEPT">接受</button>
+    <button data-v="REJECT">否定</button>
+    <button data-v="ADJUST">参数调整</button>
+    <button id="dlgDecisionCancel">取消</button>
+  </div>
+</dialog>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

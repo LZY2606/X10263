@@ -1,0 +1,13 @@
+HSF/1
+# 反例：不完整对象。保留大小只能给下界与失效原因，不得伪装成精确值。
+parser hsf-parser/1.2.0
+captured 2026-09-19T00:38:02+09:00 epoch=1758203882000
+snapshot snap-scn-incomplete
+class C1 name=com.acme.half.RootNode super=- loader=- size=40
+class C2 name=com.acme.half.PartialNode super=- loader=- size=200
+object O1 addr=0x7f240010 class=C1 size=40 site=com.acme.half.Root.<init>(Root.java:7)
+object O2 addr=0x7f240020 class=C2 size=200 site=com.acme.half.Loader.stream(Loader.java:51) incomplete
+object O3 addr=0x7f240030 class=C99 size=128 site=com.acme.half.Loader.stream(Loader.java:55)
+edge O1 -> O2 kind=STRONG field=partial
+edge O2 -> O3 kind=STRONG field=rest
+root O1 kind=JNI_GLOBAL note=loader-root

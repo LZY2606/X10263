@@ -1,0 +1,31 @@
+HSF/1
+# 堆影取证室基线快照：原始对象 id、地址、类元数据、强/弱/内部边、root 分类、不完整块、解析器版本全部保留
+parser hsf-parser/1.2.0
+captured 2026-09-19T00:33:12+09:00 epoch=1758203592000
+snapshot snap-base-001
+class C1 name=com.acme.app.SessionManager super=- loader=- size=48
+class C2 name=com.acme.cache.CacheMap super=- loader=- size=64
+class C3 name=com.acme.app.Session super=- loader=- size=56
+class C4 name=com.acme.app.Payload super=- loader=- size=512
+class C5 name=java.lang.ref.WeakReference super=- loader=- size=32
+object O1 addr=0x7f100010 class=C1 size=48 site=com.acme.app.SessionManager.<init>(SessionManager.java:18)
+object O2 addr=0x7f100040 class=C2 size=64 site=com.acme.app.SessionManager.<init>(SessionManager.java:21)
+object O3 addr=0x7f100080 class=C3 size=56 site=com.acme.app.Session.open(Session.java:54)
+object O4 addr=0x7f1000c0 class=C4 size=512 site=com.acme.app.Payload.load(Payload.java:77)
+object O5 addr=0x7f100120 class=C5 size=32
+object O6 addr=0x7f100160 class=C4 size=512 site=com.acme.app.Payload.load(Payload.java:80)
+object O7 addr=0x7f100360 class=C4 size=512 site=com.acme.app.Payload.load(Payload.java:90) incomplete
+edge O1 -> O2 kind=STRONG field=cacheMap
+edge O2 -> O3 kind=STRONG field=head
+edge O3 -> O4 kind=STRONG field=next
+edge O4 -> O3 kind=STRONG field=prev
+edge O2 -> O5 kind=INTERNAL field=refQueueSlot
+edge O5 -> O6 kind=WEAK field=referent
+edge O4 -> O7 kind=STRONG field=tailPayload
+edge O1 -> O1 kind=INTERNAL field=selfSentinel
+root O1 kind=JNI_GLOBAL note=static-holder-session-manager
+root O3 kind=THREAD note=thread-local-open-session
+begin-incomplete B1 reason=segment-truncated-by-dumper
+object O8 addr=0x7f100380 class=C4 size=
+edge O7 -> O8 kind=STRONG field=
+end-incomplete B1

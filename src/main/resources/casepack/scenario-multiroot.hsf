@@ -1,0 +1,15 @@
+HSF/1
+# 反例：多个等长 root 路径。两条长度相同的合法路径必须都保留。
+parser hsf-parser/1.2.0
+captured 2026-09-19T00:39:44+09:00 epoch=1758203984000
+snapshot snap-scn-multiroot
+class C1 name=com.acme.mr.Node super=- loader=- size=50
+object R1 addr=0x7f250010 class=C1 size=50 site=com.acme.mr.Roots.a(Roots.java:10)
+object R2 addr=0x7f250020 class=C1 size=50 site=com.acme.mr.Roots.b(Roots.java:11)
+object A  addr=0x7f250030 class=C1 size=50 site=com.acme.mr.Shared.hub(Shared.java:20)
+object T  addr=0x7f250040 class=C1 size=50 site=com.acme.mr.Shared.target(Shared.java:33)
+edge R1 -> A kind=STRONG field=a
+edge R2 -> A kind=STRONG field=b
+edge A -> T kind=STRONG field=t
+root R1 kind=THREAD note=root-thread-1
+root R2 kind=JNI_GLOBAL note=root-jni-global-2

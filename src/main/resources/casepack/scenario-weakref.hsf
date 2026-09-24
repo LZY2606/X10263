@@ -1,0 +1,11 @@
+HSF/1
+# 反例：弱引用策略。显式策略决定弱引用边是否保活，两种结果都留档。
+parser hsf-parser/1.2.0
+captured 2026-09-19T00:36:10+09:00 epoch=1758203770000
+snapshot snap-scn-weak
+class C1 name=com.acme.ref.WeakHolder super=- loader=- size=40
+class C2 name=com.acme.ref.CachedTarget super=- loader=- size=1000
+object O1 addr=0x7f220010 class=C1 size=40 site=com.acme.ref.Holder.<init>(Holder.java:8)
+object O2 addr=0x7f220020 class=C2 size=1000 site=com.acme.ref.Cache.fill(Cache.java:44)
+edge O1 -> O2 kind=WEAK field=referent
+root O1 kind=THREAD note=cache-holder-thread

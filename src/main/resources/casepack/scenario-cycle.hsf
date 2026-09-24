@@ -1,0 +1,15 @@
+HSF/1
+# 反例：循环图。支配树必须在可达图上正常构建并终止。
+parser hsf-parser/1.2.0
+captured 2026-09-19T00:35:02+09:00 epoch=1758203702000
+snapshot snap-scn-cycle
+class C1 name=com.acme.loop.Node super=- loader=- size=100
+object O1 addr=0x7f210010 class=C1 size=100 site=com.acme.loop.Graph.build(Graph.java:11)
+object O2 addr=0x7f210020 class=C1 size=100 site=com.acme.loop.Graph.build(Graph.java:12)
+object O3 addr=0x7f210030 class=C1 size=100 site=com.acme.loop.Graph.build(Graph.java:13)
+object O4 addr=0x7f210040 class=C1 size=100 site=com.acme.loop.Graph.leaf(Graph.java:30)
+edge O1 -> O2 kind=STRONG field=head
+edge O2 -> O3 kind=STRONG field=next
+edge O3 -> O2 kind=STRONG field=back
+edge O1 -> O4 kind=STRONG field=leaf
+root O1 kind=JNI_GLOBAL note=graph-root

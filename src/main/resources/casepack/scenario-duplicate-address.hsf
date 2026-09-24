@@ -1,0 +1,11 @@
+HSF/1
+# 反例：重复地址。两个对象同地址不同 id/类：地址不是稳定身份。
+parser hsf-parser/1.2.0
+captured 2026-09-19T00:37:21+09:00 epoch=1758203841000
+snapshot snap-scn-dupaddr
+class C1 name=com.acme.id.WindowA super=- loader=- size=64
+class C2 name=com.acme.id.WindowB super=- loader=- size=96
+object O1 addr=0x7f230010 class=C1 size=64 site=com.acme.id.WindowA.open(WindowA.java:14)
+object O2 addr=0x7f230010 class=C2 size=96 site=com.acme.id.WindowB.open(WindowB.java:22)
+edge O1 -> O2 kind=STRONG field=mirror
+root O1 kind=SYSTEM_CLASS note=window-a-static

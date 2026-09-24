@@ -1,0 +1,83 @@
+{
+  "title": "反例档案判定依据（机器可读；采纳与未采纳结果同时保留）",
+  "expectations": [
+    {
+      "id": "cycle", "scenarioId": "snap-scn-cycle", "paramsVersion": 1,
+      "basis": "支配树只在可达图上构建；循环图是合法可达图，支配计算必须终止且支配父级唯一",
+      "adopted": ["O2 与 O3 的直接支配者为 O1", "O4 的直接支配者为 O1"],
+      "rejected": ["循环导致无限遍历/无法构建支配树"],
+      "checks": [
+        { "path": "reachable", "expect": ["O1", "O2", "O3", "O4"] },
+        { "path": "idom.O2", "expect": "O1" },
+        { "path": "idom.O3", "expect": "O1" },
+        { "path": "retained.O1.exactBytes", "expect": 400 }
+      ]
+    },
+    {
+      "id": "weakref-policy-v1", "scenarioId": "snap-scn-weak", "paramsVersion": 1,
+      "basis": "弱引用是否保活由显式策略决定；默认策略 weakKeepAlive=false，O2 不可达",
+      "adopted": ["O2 不在可达集", "对 O2 不存在保留大小主张"],
+      "rejected": ["沿弱引用边把 O2 计为可达/保留"],
+      "checks": [
+        { "path": "reachable", "expect": ["O1"] },
+        { "path": "unreachable", "expect": ["O2"] },
+        { "path": "droppedWeakEdges", "expect": 1 }
+      ]
+    },
+    {
+      "id": "weakref-policy-v2", "scenarioId": "snap-scn-weak", "paramsVersion": 2,
+      "basis": "同一材料在显式保活实验参数下得到对照结果；结果与参数版本一起保存，不覆盖 v1",
+      "adopted": ["O2 仅在 weakKeepAlive=true 时可达"],
+      "rejected": ["把 v2 当作默认 GC 结论"],
+      "checks": [
+        { "path": "reachable", "expect": ["O1", "O2"] },
+        { "path": "retained.O1.exactBytes", "expect": 1040 }
+      ]
+    },
+    {
+      "id": "duplicate-address", "scenarioId": "snap-scn-dupaddr", "paramsVersion": 1,
+      "basis": "地址不当稳定身份：相同地址的两个对象按 objectId 区分，全部保留",
+      "adopted": ["O1、O2 是两个独立对象", "地址冲突作为诊断呈现"],
+      "rejected": ["按地址合并对象或丢弃其一"],
+      "checks": [
+        { "path": "addressCollisions[0].address", "expect": "0x7f230010" },
+        { "path": "addressCollisions[0].objectIds", "expect": ["O1", "O2"] },
+        { "path": "retained.O1.exactBytes", "expect": 160 }
+      ]
+    },
+    {
+      "id": "incomplete-object", "scenarioId": "snap-scn-incomplete", "paramsVersion": 1,
+      "basis": "无法转换/不完整的值留在原位置并附诊断；保留大小给下界与失效原因，不用 0 伪装精确成功",
+      "adopted": ["O1 保留大小为下界 368 B 且标记失效", "失效原因包含不完整对象与缺失类元数据"],
+      "rejected": ["返回精确字节数", "用 0 或默认值填充"],
+      "checks": [
+        { "path": "retained.O1.exactBytes", "expect": null },
+        { "path": "retained.O1.lowerBoundBytes", "expect": 368 },
+        { "path": "retained.O1.invalid", "expect": true }
+      ]
+    },
+    {
+      "id": "multi-root-equal-paths", "scenarioId": "snap-scn-multiroot", "paramsVersion": 1,
+      "basis": "多个等长 root 路径全部保留；无法唯一决定时保留全部合法候选",
+      "adopted": ["A 有两条等长 root 路径（THREAD/JNI_GLOBAL）", "T 经 A 的两条等长路径都保留"],
+      "rejected": ["任选一条路径", "丢弃非首选 root 分类"],
+      "checks": [
+        { "path": "paths.A.paths.length", "expect": 2 },
+        { "path": "paths.T.paths.length", "expect": 2 },
+        { "path": "paths.A.shortestDepth", "expect": 1 }
+      ]
+    },
+    {
+      "id": "class-rename", "diff": ["snap-scn-rename-a", "snap-scn-rename-b"],
+      "basis": "类跨快照身份是 classId：改名是 RENAMED 而非删除+新增；对象身份是 objectId 而非地址",
+      "adopted": ["C7 状态为 RENAMED（Helper -> Helper2）", "H1 地址变化但身份对应保留"],
+      "rejected": ["按类名把改名算作 REMOVED+ADDED", "按地址重建对象对应"],
+      "checks": [
+        { "path": "group.C7.status", "expect": "RENAMED" },
+        { "path": "group.C7.nameA", "expect": "com.acme.util.Helper" },
+        { "path": "group.C7.nameB", "expect": "com.acme.util.Helper2" },
+        { "path": "identityNotes.length", "expectAtLeast": 2 }
+      ]
+    }
+  ]
+}

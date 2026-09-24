@@ -1,0 +1,4 @@
+# 局部源数据改动：只向基线快照的 O2 保留子树追加一个钉住项，不触碰其他对象。
+class C7 name=com.acme.cache.PinnedEntry super=- loader=- size=32
+object P1 addr=0x7f100400 class=C7 size=32 site=com.acme.cache.PinnedEntry.<init>(PinnedEntry.java:9)
+edge O2 -> P1 kind=STRONG field=pinned

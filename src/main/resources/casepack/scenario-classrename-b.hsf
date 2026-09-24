@@ -1,0 +1,11 @@
+HSF/1
+# 反例：类改名与快照身份对应（后像）。C7 改名；H1 移动地址但 objectId 不变。
+parser hsf-parser/1.2.0
+captured 2026-09-19T00:42:18+09:00 epoch=1758204138000
+snapshot snap-scn-rename-b
+class C1 name=com.acme.app.App super=- loader=- size=80
+class C7 name=com.acme.util.Helper2 super=- loader=- size=120
+object A1 addr=0x7f260020 class=C1 size=80 site=com.acme.app.App.boot(App.java:15)
+object H1 addr=0x7f260090 class=C7 size=120 site=com.acme.util.Helper2.<init>(Helper2.java:8)
+edge A1 -> H1 kind=STRONG field=helper
+root A1 kind=SYSTEM_CLASS note=app-root
