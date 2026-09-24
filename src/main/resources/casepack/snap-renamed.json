@@ -1,0 +1,42 @@
+{
+  "capturedAt": "1758812400000",
+  "parser": { "name": "hprof-lite", "version": "1.4.2" },
+  "classes": [
+    { "classId": "cls-cache", "name": "com.acme.Cache", "classLoaderId": "loader-app" },
+    { "classId": "cls-entry", "name": "com.acme.CacheEntryHolder", "classLoaderId": "loader-app" },
+    { "classId": "cls-node", "name": "com.acme.Node", "classLoaderId": "loader-app" },
+    { "classId": "cls-shared", "name": "com.acme.SharedBuffer", "classLoaderId": "loader-app" },
+    { "classId": "cls-leak", "name": "com.acme.ReportBuffer", "classLoaderId": "loader-app" }
+  ],
+  "objects": [
+    { "objectId": "obj-cache", "address": "0x7f000100", "classId": "cls-cache", "shallowSize": "64", "allocationSite": "App.main(App.java:10)" },
+    { "objectId": "obj-entry", "address": "0x7f000210", "classId": "cls-entry", "shallowSize": "128", "allocationSite": "Cache.put(Cache.java:42)" },
+    { "objectId": "obj-leak", "address": "0x7f000310", "classId": "cls-leak", "shallowSize": "4096", "allocationSite": "ReportBuilder.build(ReportBuilder.java:87)" },
+    { "objectId": "obj-leak2", "address": "0x7f000320", "classId": "cls-leak", "shallowSize": "8192", "allocationSite": "ReportBuilder.build(ReportBuilder.java:91)" },
+    { "objectId": "obj-a", "address": "0x7f000400", "classId": "cls-node", "shallowSize": "32", "allocationSite": "Graph.link(Graph.java:21)" },
+    { "objectId": "obj-b", "address": "0x7f000500", "classId": "cls-node", "shallowSize": "32", "allocationSite": "Graph.link(Graph.java:22)" },
+    { "objectId": "obj-x", "address": "0x7f000600", "classId": "cls-node", "shallowSize": "16", "allocationSite": "Registry.init(Registry.java:8)" },
+    { "objectId": "obj-y", "address": "0x7f000700", "classId": "cls-node", "shallowSize": "16", "allocationSite": "Registry.init(Registry.java:9)" },
+    { "objectId": "obj-shared", "address": "0x7f000800", "classId": "cls-shared", "shallowSize": "256", "allocationSite": "BufferPool.alloc(BufferPool.java:55)" },
+    { "objectId": "obj-dup1", "address": "0x7f00dead", "classId": "cls-node", "shallowSize": "24", "allocationSite": "NativeBridge.alloc(NativeBridge.java:3)" },
+    { "objectId": "obj-dup2", "address": "0x7f00dead", "classId": "cls-node", "shallowSize": "24", "allocationSite": "NativeBridge.alloc(NativeBridge.java:4)" }
+  ],
+  "edges": [
+    { "from": "obj-cache", "to": "obj-entry", "kind": "WEAK", "label": "weakTable[i]" },
+    { "from": "obj-entry", "to": "obj-leak", "kind": "STRONG", "label": "payload" },
+    { "from": "obj-cache", "to": "obj-leak2", "kind": "STRONG", "label": "overflow" },
+    { "from": "obj-a", "to": "obj-b", "kind": "STRONG", "label": "next" },
+    { "from": "obj-b", "to": "obj-a", "kind": "STRONG", "label": "next" },
+    { "from": "obj-x", "to": "obj-shared", "kind": "STRONG", "label": "buffer" },
+    { "from": "obj-y", "to": "obj-shared", "kind": "STRONG", "label": "buffer" },
+    { "from": "obj-cache", "to": "obj-dup1", "kind": "INTERNAL", "label": "nativeHandle" },
+    { "from": "obj-a", "to": "obj-dup2", "kind": "STRONG", "label": "peer" }
+  ],
+  "roots": [
+    { "objectId": "obj-cache", "kind": "JNI_GLOBAL", "description": "cache singleton (JNI global ref)" },
+    { "objectId": "obj-a", "kind": "THREAD_FRAME", "description": "main thread frame local 'head'" },
+    { "objectId": "obj-x", "kind": "SYSTEM_CLASS", "description": "static field Registry.left" },
+    { "objectId": "obj-y", "kind": "JNI_LOCAL", "description": "JNI local ref in worker thread" }
+  ],
+  "incompleteBlocks": []
+}
