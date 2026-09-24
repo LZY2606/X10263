@@ -1,0 +1,54 @@
+{
+  "archiveId": "heap-shadow-forensics",
+  "title": "堆影取证室：内存快照、弱引用边与保留路径候选",
+  "scenarios": [
+    {
+      "scenarioId": "cycle-graph",
+      "title": "循环图：session 回指 CacheManager",
+      "mutation": { "kind": "addEdge", "edge": { "from": "o5", "to": "o1", "kind": "STRONG", "label": "backlink" } },
+      "expectedStatus": "OK",
+      "affectedObjects": ["o1"],
+      "note": "环回到 root；支配关系与保留大小只在环成员上重估，o6/o7 不受影响"
+    },
+    {
+      "scenarioId": "weak-policy",
+      "title": "弱引用策略：WEAK 边是否保活由显式参数决定",
+      "mutation": { "kind": "setWeakPolicy", "weakPolicy": "weak-keep-alive" },
+      "expectedStatus": "OK",
+      "affectedObjects": ["o7", "o4", "o1"],
+      "note": "仅参数修订；o7 变为可达并挂到 o4 的支配子树"
+    },
+    {
+      "scenarioId": "duplicate-address",
+      "title": "重复地址：地址不是稳定身份",
+      "mutation": { "kind": "addObject", "object": { "objectId": "o10", "address": "0x7f20", "classId": "c4", "sizeBytes": "256", "allocationSite": { "file": "UserSession.java", "line": 70, "method": "relogin" } }, "edge": { "from": "o1", "to": "o10", "kind": "STRONG", "label": "previous" } },
+      "expectedStatus": "OK",
+      "affectedObjects": ["o10", "o1"],
+      "note": "o10 与 o5/o9 共用地址 0x7f20；身份仍按 objectId，不合并"
+    },
+    {
+      "scenarioId": "incomplete-object",
+      "title": "不完整对象：缺 sizeBytes 必须报带位置诊断",
+      "mutation": { "kind": "addObject", "object": { "objectId": "o11", "address": "0x7f40", "classId": "c2", "incomplete": true, "note": "truncated record" }, "edge": { "from": "o1", "to": "o11", "kind": "STRONG", "label": "broken" } },
+      "expectedStatus": "SEMANTICALLY_UNSOLVABLE",
+      "affectedObjects": ["o11"],
+      "note": "不允许用空值/默认值伪装成功；诊断位置 $.objects[9].sizeBytes"
+    },
+    {
+      "scenarioId": "multi-root-equal-path",
+      "title": "多 root 等长路径：保留全部合法候选",
+      "mutation": { "kind": "addEdge", "edge": { "from": "o4", "to": "o5", "kind": "STRONG", "label": "evictRef" } },
+      "expectedStatus": "OK",
+      "affectedObjects": ["o5"],
+      "note": "o5 增加第 4 条等长 root 路径 [o1,o4,o5]；保留大小不变"
+    },
+    {
+      "scenarioId": "class-rename",
+      "title": "类改名与快照身份对应：类身份是 classId 不是名字",
+      "mutation": { "kind": "useSnapshot", "snapshotId": "snap-renamed" },
+      "expectedStatus": "OK",
+      "affectedObjects": [],
+      "note": "c1..c4 改名 com.acme.cache.* -> com.acme.legacy.*；diff 应报 RENAMED 而非增删"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "snapshotId": "snap-renamed",
+  "parserVersion": "hsf-parser/1.2.0",
+  "capturedAtEpochMs": 1758003600000,
+  "source": "casepack://heap-shadow-forensics/renamed",
+  "classes": [
+    { "classId": "c0", "name": "java.lang.Class", "metadata": { "kind": "system" } },
+    { "classId": "c1", "name": "com.acme.legacy.CacheManager", "superClassId": "c0", "classLoaderId": "c0", "metadata": { "fields": "head,spare,eviction,current", "module": "cache" } },
+    { "classId": "c2", "name": "com.acme.legacy.CacheEntry", "superClassId": "c0", "classLoaderId": "c0", "metadata": { "fields": "key,value,next,prev", "module": "cache" } },
+    { "classId": "c3", "name": "com.acme.legacy.EvictionQueue", "superClassId": "c0", "classLoaderId": "c0", "metadata": { "fields": "weakTail", "module": "cache" } },
+    { "classId": "c4", "name": "com.acme.legacy.UserSession", "superClassId": "c0", "classLoaderId": "c0", "metadata": { "fields": "userId,attrs", "module": "session" } },
+    { "classId": "c5", "name": "com.acme.metrics.MetricsSink", "superClassId": "c0", "classLoaderId": "c0", "metadata": { "fields": "buffer", "module": "metrics" } }
+  ],
+  "objects": [
+    { "objectId": "o1", "address": "0x7f00", "classId": "c1", "sizeBytes": "64",  "allocationSite": { "file": "CacheManager.java", "line": 12, "method": "init" } },
+    { "objectId": "o2", "address": "0x7f08", "classId": "c2", "sizeBytes": "128", "allocationSite": { "file": "CacheEntry.java", "line": 30, "method": "put" } },
+    { "objectId": "o3", "address": "0x7f10", "classId": "c2", "sizeBytes": "128", "allocationSite": { "file": "CacheEntry.java", "line": 30, "method": "put" } },
+    { "objectId": "o4", "address": "0x7f18", "classId": "c3", "sizeBytes": "48",  "allocationSite": { "file": "EvictionQueue.java", "line": 8, "method": "<init>" } },
+    { "objectId": "o5", "address": "0x7f20", "classId": "c4", "sizeBytes": "256", "allocationSite": { "file": "UserSession.java", "line": 55, "method": "login" } },
+    { "objectId": "o7", "address": "0x7f30", "classId": "c2", "sizeBytes": "128", "allocationSite": { "file": "CacheEntry.java", "line": 44, "method": "evict" } },
+    { "objectId": "o8", "address": "0x7f38", "classId": "c2", "sizeBytes": "96",  "allocationSite": { "file": "CacheEntry.java", "line": 30, "method": "put" } },
+    { "objectId": "o9", "address": "0x7f20", "classId": "c4", "sizeBytes": "256", "allocationSite": { "file": "UserSession.java", "line": 61, "method": "reconnect" } },
+    { "objectId": "o11", "address": "0x7f48", "classId": "c5", "sizeBytes": "512", "allocationSite": { "file": "MetricsSink.java", "line": 21, "method": "open" } }
+  ],
+  "edges": [
+    { "from": "o1", "to": "o2", "kind": "STRONG",   "label": "head" },
+    { "from": "o1", "to": "o3", "kind": "STRONG",   "label": "spare" },
+    { "from": "o2", "to": "o3", "kind": "STRONG",   "label": "next" },
+    { "from": "o3", "to": "o2", "kind": "STRONG",   "label": "prev" },
+    { "from": "o1", "to": "o4", "kind": "STRONG",   "label": "eviction" },
+    { "from": "o4", "to": "o7", "kind": "WEAK",     "label": "weakTail" },
+    { "from": "o2", "to": "o5", "kind": "INTERNAL", "label": "sessionRef" },
+    { "from": "o3", "to": "o5", "kind": "STRONG",   "label": "overflow" },
+    { "from": "o9", "to": "o8", "kind": "STRONG",   "label": "scratch" },
+    { "from": "o8", "to": "o5", "kind": "STRONG",   "label": "merged" },
+    { "from": "o1", "to": "o11", "kind": "STRONG",  "label": "metrics" }
+  ],
+  "roots": [
+    { "objectId": "o1", "rootType": "JNI_GLOBAL" },
+    { "objectId": "o9", "rootType": "JAVA_FRAME" }
+  ],
+  "incompleteChunks": [
+    { "offset": 4096, "length": 64, "reason": "segment truncated by uploader" }
+  ]
+}
