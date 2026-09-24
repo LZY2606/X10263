@@ -1,0 +1,53 @@
+{
+  "format": "heapfmt",
+  "formatVersion": 1,
+  "snapshotId": "snap-b",
+  "parserVersion": "heapfmt-parser/1.2.0",
+  "capturedAt": "2026-09-19T01:10:00Z",
+  "classes": [
+    {"id": "c1", "name": "com.acme.App"},
+    {"id": "c2", "name": "com.acme.Cache"},
+    {"id": "c3", "name": "com.acme.CacheEntry"},
+    {"id": "c4", "name": "com.acme.Listener"},
+    {"id": "c5", "name": "com.acme.Buffer"},
+    {"id": "c8", "name": "com.acme.Registry"},
+    {"id": "c9", "name": "com.acme.leak.LeakCandidateV2"}
+  ],
+  "allocSites": [
+    {"id": "as1", "className": "com.acme.App", "method": "main", "line": 42},
+    {"id": "as2", "className": "com.acme.Cache", "method": "put", "line": 87},
+    {"id": "as3", "className": "com.acme.Registry", "method": "register", "line": 13}
+  ],
+  "objects": [
+    {"id": "o1", "address": "0x1000", "classId": "c1", "sizeBytes": 64,  "allocSiteId": "as1"},
+    {"id": "o2", "address": "0x2000", "classId": "c2", "sizeBytes": 128, "allocSiteId": "as2"},
+    {"id": "o3", "address": "0x3000", "classId": "c3", "sizeBytes": 128, "allocSiteId": "as2"},
+    {"id": "o4", "address": "0x4000", "classId": "c4", "sizeBytes": 32,  "allocSiteId": "as2"},
+    {"id": "o5", "address": "0x5000", "classId": "c5", "sizeBytes": 16},
+    {"id": "o6", "address": "0x5000", "classId": "c5", "sizeBytes": 16},
+    {"id": "o7", "address": "0x7f00", "classId": null, "sizeBytes": null, "incomplete": true},
+    {"id": "o8", "address": "0x6000", "classId": "c8", "sizeBytes": 48,  "allocSiteId": "as3"},
+    {"id": "o9", "address": "0x8000", "classId": "c9", "sizeBytes": 48,  "allocSiteId": "as3"},
+    {"id": "o10", "address": "0xa000", "classId": "c2", "sizeBytes": 128, "allocSiteId": "as2"}
+  ],
+  "edges": [
+    {"from": "o1", "to": "o2", "kind": "STRONG", "name": "cache"},
+    {"from": "o2", "to": "o3", "kind": "STRONG", "name": "entry"},
+    {"from": "o3", "to": "o2", "kind": "STRONG", "name": "owner"},
+    {"from": "o2", "to": "o4", "kind": "WEAK",   "name": "listener"},
+    {"from": "o1", "to": "o5", "kind": "STRONG", "name": "bufA"},
+    {"from": "o1", "to": "o6", "kind": "STRONG", "name": "bufB"},
+    {"from": "o3", "to": "o7", "kind": "STRONG", "name": "ghost"},
+    {"from": "o1", "to": "o8", "kind": "INTERNAL", "name": "registryRef"},
+    {"from": "o1", "to": "o9", "kind": "STRONG", "name": "direct"},
+    {"from": "o8", "to": "o9", "kind": "STRONG", "name": "viaGlobal"},
+    {"from": "o2", "to": "o10", "kind": "STRONG", "name": "overflow"}
+  ],
+  "roots": [
+    {"id": "r1", "objectId": "o1", "kind": "THREAD"},
+    {"id": "r2", "objectId": "o8", "kind": "JNI_GLOBAL"}
+  ],
+  "incompleteBlocks": [
+    "block@0x9000: truncated 128 of 256 bytes (parser heapfmt-parser/1.2.0)"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "patchId": "p1",
+  "note": "源数据修订：Registry(o8) 新增到 CacheEntry(o3) 的强引用 backupRef，仅影响局部依赖（o2/o3/o7 的支配与保留）",
+  "addEdges": [
+    {"from": "o8", "to": "o3", "kind": "STRONG", "name": "backupRef"}
+  ]
+}

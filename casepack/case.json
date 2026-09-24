@@ -1,0 +1,15 @@
+{
+  "id": "heap-forensics-room",
+  "title": "堆影取证室：内存快照、弱引用边与保留路径候选",
+  "parserVersion": "heapfmt-parser/1.2.0",
+  "narrative": "运行时团队导入堆快照中的对象、类、边、root 类型和 allocation site，审查保留大小与泄漏路径候选。基线完整保留原始对象 id、地址、类元数据、强/弱/内部边、root 分类、不完整块和解析器版本；随后一次参数修订（弱引用策略）、一次局部源数据改动（Registry->CacheEntry 强引用）和一次互相冲突的人工决定。",
+  "script": [
+    {"op": "import", "file": "baseline.heap.json", "source": "casepack:baseline"},
+    {"op": "import", "file": "snapshot-b.heap.json", "source": "casepack:snapshot-b"},
+    {"op": "params", "weakPolicy": "KEEP", "maxRootPaths": 256, "rationale": "参数修订：复核弱引用保活策略对 Listener(o4) 可达性的影响"},
+    {"op": "params", "weakPolicy": "DROP", "maxRootPaths": 256, "rationale": "恢复 JVM 默认弱引用语义（弱引用不保活）"},
+    {"op": "patch", "file": "patch-001.json"},
+    {"op": "decide", "target": "o2", "verdict": "accept", "rationale": "Cache(o2) 支配循环 o2<->o3 与不完整对象 o7，保留 384 B，判定为泄漏候选"},
+    {"op": "decide", "target": "o2", "verdict": "reject", "rationale": "人工复核冲突：Cache 为业务缓存，补丁后 o3 改由 Registry 支配，暂不定性为泄漏"}
+  ]
+}

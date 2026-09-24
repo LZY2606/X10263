@@ -1,0 +1,87 @@
+{
+  "note": "测试断言基线；数值单位均为字节",
+  "baseline": {
+    "weakDrop": {
+      "reachable": [
+        "o1",
+        "o2",
+        "o3",
+        "o5",
+        "o6",
+        "o7",
+        "o8",
+        "o9"
+      ],
+      "unreachable": [
+        "o4"
+      ],
+      "dominatorParent": {
+        "o1": null,
+        "o2": "o1",
+        "o3": "o2",
+        "o5": "o1",
+        "o6": "o1",
+        "o7": "o3",
+        "o8": null,
+        "o9": null
+      },
+      "retainedBytes": {
+        "o1": 352,
+        "o2": 256,
+        "o3": 128,
+        "o5": 16,
+        "o6": 16,
+        "o7": 0,
+        "o8": 48,
+        "o9": 48
+      },
+      "retainedIncomplete": [
+        "o1",
+        "o2",
+        "o3",
+        "o7"
+      ],
+      "rootPathsOfO9": [
+        [
+          "o1",
+          "o9"
+        ],
+        [
+          "o8",
+          "o9"
+        ]
+      ]
+    },
+    "weakKeep": {
+      "reachableIncludes": [
+        "o4"
+      ],
+      "dominatorParent": {
+        "o4": "o2"
+      },
+      "retainedBytes": {
+        "o2": 288,
+        "o1": 384
+      }
+    }
+  },
+  "afterPatch": {
+    "dominatorParent": {
+      "o3": null
+    },
+    "retainedBytes": {
+      "o2": 128
+    },
+    "affectedObjects": [
+      "o1",
+      "o2",
+      "o3"
+    ]
+  },
+  "diff": {
+    "renamedClass": "c9",
+    "renamedFrom": "com.acme.LeakCandidate",
+    "renamedTo": "com.acme.leak.LeakCandidateV2",
+    "grownClass": "c2"
+  }
+}
