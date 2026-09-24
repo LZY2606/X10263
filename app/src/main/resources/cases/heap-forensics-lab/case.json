@@ -1,0 +1,81 @@
+{
+  "caseId": "heap-forensics-lab",
+  "title": "堆影取证室：内存快照、弱引用边与保留路径候选",
+  "timeBase": "ISO-8601/Asia-Tokyo",
+  "sizeUnitBase": "bytes",
+  "snapshots": [
+    {
+      "snapshotId": "snap-2026-09-20-baseline",
+      "parserVersion": "hprof-lite/1.4.2",
+      "capturedAt": "2026-09-20T03:12:00+09:00",
+      "classes": [
+        {"classId": "c1", "name": "com.acme.Cache", "loader": "app"},
+        {"classId": "c2", "name": "com.acme.Session", "loader": "app"},
+        {"classId": "c3", "name": "com.acme.Buffer", "loader": "app"}
+      ],
+      "objects": [
+        {"objectId": "o1", "address": "0x1000", "classId": "c1", "size": {"raw": "128", "unit": "B"}, "allocationSite": "com.acme.Cache.<init>(Cache.java:17)"},
+        {"objectId": "o2", "address": "0x2000", "classId": "c2", "size": {"raw": "64", "unit": "B"}, "allocationSite": "com.acme.Login.open(Login.java:88)"},
+        {"objectId": "o3", "address": "0x2000", "classId": "c3", "size": {"raw": "32", "unit": "B"}, "allocationSite": "com.acme.Io.read(Io.java:12)"},
+        {"objectId": "o4", "address": "0x3000", "classId": "c2", "size": {"raw": "48", "unit": "B"}, "allocationSite": "com.acme.Login.open(Login.java:91)"},
+        {"objectId": "o5", "address": "0x4000", "classId": "c3", "size": {"raw": "16", "unit": "B"}, "allocationSite": "com.acme.Io.read(Io.java:30)"},
+        {"objectId": "o6", "address": "0x5000", "classId": "c1", "size": {"raw": "256", "unit": "B"}, "allocationSite": "com.acme.Cache.warm(Cache.java:55)"},
+        {"objectId": "o7", "address": "0x6000", "classId": "c2", "size": {"raw": "24", "unit": "B"}},
+        {"objectId": "o8", "address": "0x7000", "classId": "c3", "size": {"raw": "8", "unit": "B"}, "incomplete": true}
+      ],
+      "edges": [
+        {"fromId": "o1", "toId": "o2", "kind": "STRONG", "field": "session"},
+        {"fromId": "o1", "toId": "o3", "kind": "STRONG", "field": "scratch"},
+        {"fromId": "o2", "toId": "o4", "kind": "STRONG", "field": "next"},
+        {"fromId": "o3", "toId": "o4", "kind": "STRONG", "field": "owner"},
+        {"fromId": "o4", "toId": "o5", "kind": "STRONG", "field": "buf"},
+        {"fromId": "o5", "toId": "o2", "kind": "STRONG", "field": "back"},
+        {"fromId": "o1", "toId": "o6", "kind": "WEAK", "field": "cached"},
+        {"fromId": "o1", "toId": "o8", "kind": "INTERNAL", "field": "chunkRef"}
+      ],
+      "roots": [
+        {"objectId": "o1", "rootType": "THREAD", "description": "main thread local"},
+        {"objectId": "o8", "rootType": "NATIVE_STACK", "description": "native frame"}
+      ],
+      "incompleteChunks": [
+        {"chunkId": "chunk-1", "offset": 4096, "length": 512, "reason": "truncated segment at EOF", "rawHex": "0a1f..."}
+      ]
+    },
+    {
+      "snapshotId": "snap-2026-09-21-renamed",
+      "parserVersion": "hprof-lite/1.4.2",
+      "capturedAt": "2026-09-21T03:12:00+09:00",
+      "classes": [
+        {"classId": "c1", "name": "com.acme.Cache", "loader": "app"},
+        {"classId": "c2", "name": "com.acme.UserSession", "loader": "app"},
+        {"classId": "c3", "name": "com.acme.Buffer", "loader": "app"}
+      ],
+      "objects": [
+        {"objectId": "o1", "address": "0x1000", "classId": "c1", "size": {"raw": "128", "unit": "B"}, "allocationSite": "com.acme.Cache.<init>(Cache.java:17)"},
+        {"objectId": "o2", "address": "0x2000", "classId": "c2", "size": {"raw": "64", "unit": "B"}},
+        {"objectId": "o4", "address": "0x3000", "classId": "c2", "size": {"raw": "48", "unit": "B"}},
+        {"objectId": "o5", "address": "0x4000", "classId": "c3", "size": {"raw": "16", "unit": "B"}}
+      ],
+      "edges": [
+        {"fromId": "o1", "toId": "o2", "kind": "STRONG", "field": "session"},
+        {"fromId": "o2", "toId": "o4", "kind": "STRONG", "field": "next"},
+        {"fromId": "o4", "toId": "o5", "kind": "STRONG", "field": "buf"},
+        {"fromId": "o5", "toId": "o2", "kind": "STRONG", "field": "back"}
+      ],
+      "roots": [
+        {"objectId": "o1", "rootType": "THREAD", "description": "main thread local"}
+      ],
+      "incompleteChunks": []
+    }
+  ],
+  "scenario": [
+    {"step": 1, "kind": "import", "note": "初始导入：原始对象 id、地址、类元数据、强/弱/内部边、root 分类、不完整块和解析器版本均保留"},
+    {"step": 2, "kind": "analyze", "snapshotId": "snap-2026-09-20-baseline", "params": {"version": "params/v1", "weakPolicy": "WEAK_NOT_RETAINED"}},
+    {"step": 3, "kind": "params-revision", "note": "参数修订：弱引用策略翻转为 WEAK_RETAINED，版本升为 params/v2", "params": {"version": "params/v2", "weakPolicy": "WEAK_RETAINED"}},
+    {"step": 4, "kind": "source-amendment", "note": "只影响局部依赖的源数据改动：为不可达对象 o7 补一条来自 o4 的强边", "amend": {"addEdges": [{"fromId": "o4", "toId": "o7", "kind": "STRONG", "field": "recovered"}]}},
+    {"step": 5, "kind": "decision-conflict", "note": "互相冲突的人工决定：o6 是否构成泄漏候选", "decisions": [
+      {"targetObjectId": "o6", "verdict": "ACCEPT", "rationale": "weak edge keeps 256B cache alive under v2 policy"},
+      {"targetObjectId": "o6", "verdict": "REJECT", "rationale": "cache is intentional; weak ref by design"}
+    ]}
+  ]
+}
