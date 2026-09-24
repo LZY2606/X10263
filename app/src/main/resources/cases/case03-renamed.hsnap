@@ -1,0 +1,46 @@
+# 反例分支 B：第二次抓取。源数据只做局部改动：
+#  1) 类改名：LeakyActivity -> DetailsActivity（classId 也变成 cDetails），
+#     但对象地址签名与浅字节多重集一致 => RENAMED 对应；
+#  2) 局部新增一个对象 oNewCacheEntry（只应影响缓存子树保留大小，不影响支配结构其余部分）；
+#  3) 修复：oListener->oLeak2 改为 weak（参数 DROP_WEAK 下泄漏消失）。
+HSNAP v1 parser=hslab-parser/1.0.0 captured=2026-09-02T08:00:00Z epoch=1788307200000
+CLASS id=cDetails name="DetailsActivity" super=cActivity loader=lBoot
+CLASS id=cActivity name="android.app.Activity" super=cContext loader=lBoot
+CLASS id=cCache name="BitmapCache" super=cObject loader=lApp
+CLASS id=cBitmap name="Bitmap" super=cObject loader=lApp
+CLASS id=cListener name="MessageListener" super=cObject loader=lApp
+CLASS id=cStatic name="ChatClient" super=cObject loader=lBoot
+CLASS id=cSession name="ChatSession" super=cObject loader=lApp
+CLASS id=cShort name="ShortLived" super=cObject loader=lApp
+SITE id=sMain class=cDetails at="DetailsActivity.kt:42" epoch=1788307200120
+SITE id=sCache class=cCache at="ChatClient.kt:91" epoch=1788307200300
+SITE id=sWorker class=cListener at="MessageBus.kt:17" epoch=1788307200410
+OBJECT id=oStatic2 addr=0x1000 class=cStatic size=512 site=sCache
+OBJECT id=oCache2 addr=0x2000 class=cCache size=256 site=sCache
+OBJECT id=oBmp1a addr=0x3000 class=cBitmap size=2.0KiB
+OBJECT id=oBmp2a addr=0x3100 class=cBitmap size=1.5KiB
+OBJECT id=oNewCacheEntry addr=0x3200 class=cBitmap size=0.5KiB
+OBJECT id=oSession2 addr=0x4000 class=cSession size=384
+OBJECT id=oListener2 addr=0x5000 class=cListener size=128 site=sWorker
+OBJECT id=oLeak2 addr=0x6000 class=cDetails size=4.0KiB site=sMain
+OBJECT id=oBmpLeak2 addr=0x6100 class=cBitmap size=16.0KiB
+OBJECT id=oWeakTarget2 addr=0x7000 class=cShort size=64
+OBJECT id=oA2 addr=0x8000 class=cShort size=100
+OBJECT id=oB2 addr=0x8100 class=cShort size=100
+OBJECT id=oShared2 addr=0x9000 class=cShort size=200
+EDGE from=oStatic2 to=oCache2 strength=strong label="cache"
+EDGE from=oStatic2 to=oSession2 strength=strong label="session"
+EDGE from=oCache2 to=oBmp1a strength=strong label="entry[0]"
+EDGE from=oCache2 to=oBmp2a strength=strong label="entry[1]"
+EDGE from=oCache2 to=oNewCacheEntry strength=strong label="entry[2]"
+EDGE from=oSession2 to=oListener2 strength=strong label="listener"
+EDGE from=oListener2 to=oLeak2 strength=weak label="callback.activity"
+EDGE from=oLeak2 to=oBmpLeak2 strength=internal label="mSurface"
+EDGE from=oLeak2 to=oWeakTarget2 strength=weak label="weakRef"
+EDGE from=oSession2 to=oA2 strength=strong label="ringIn"
+EDGE from=oA2 to=oB2 strength=strong label="next"
+EDGE from=oB2 to=oA2 strength=strong label="prev"
+EDGE from=oStatic2 to=oShared2 strength=strong label="pathA"
+EDGE from=oSession2 to=oShared2 strength=strong label="pathB"
+ROOT id=oStatic2 kind=system-class label="ChatClient.INSTANCE"
+ROOT id=oSession2 kind=jni-global label="nativeSession"

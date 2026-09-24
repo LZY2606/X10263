@@ -1,0 +1,47 @@
+# 反例分支 A：与基线完全相同的材料，仅切换弱引用策略（参数修订，不改源数据）。
+# 预期：KEEP_WEAK 时 oWeakTarget/oDupA 可达且被保留；DROP_WEAK 时不可达。
+# 本文件作为“同一材料、第二组参数”的对照载体，内容哈希与基线一致。
+HSNAP v1 parser=hslab-parser/1.0.0 captured=2026-09-01T08:00:00Z epoch=1788220800000
+CLASS id=cLeak name="LeakyActivity" super=cActivity loader=lBoot
+CLASS id=cActivity name="android.app.Activity" super=cContext loader=lBoot
+CLASS id=cCache name="BitmapCache" super=cObject loader=lApp
+CLASS id=cBitmap name="Bitmap" super=cObject loader=lApp
+CLASS id=cListener name="MessageListener" super=cObject loader=lApp
+CLASS id=cStatic name="ChatClient" super=cObject loader=lBoot
+CLASS id=cSession name="ChatSession" super=cObject loader=lApp
+CLASS id=cShort name="ShortLived" super=cObject loader=lApp
+SITE id=sMain class=cLeak at="MainActivity.kt:42" epoch=1788220800120
+SITE id=sCache class=cCache at="ChatClient.kt:88" epoch=1788220800300
+SITE id=sWorker class=cListener at="MessageBus.kt:17" epoch=1788220800410
+OBJECT id=oStatic addr=0x1000 class=cStatic size=512 site=sCache
+OBJECT id=oCache addr=0x2000 class=cCache size=256 site=sCache
+OBJECT id=oBmp1 addr=0x3000 class=cBitmap size=2.0KiB
+OBJECT id=oBmp2 addr=0x3100 class=cBitmap size=1.5KiB
+OBJECT id=oSession addr=0x4000 class=cSession size=384
+OBJECT id=oListener addr=0x5000 class=cListener size=128 site=sWorker
+OBJECT id=oLeak addr=0x6000 class=cLeak size=4.0KiB site=sMain
+OBJECT id=oBmpLeak addr=0x6100 class=cBitmap size=16.0KiB
+OBJECT id=oWeakTarget addr=0x7000 class=cShort size=64
+OBJECT id=oA addr=0x8000 class=cShort size=100
+OBJECT id=oB addr=0x8100 class=cShort size=100
+OBJECT id=oShared addr=0x9000 class=cShort size=200
+OBJECT id=oDupA addr=0xA000 class=cShort size=80
+OBJECT id=oDupB addr=0xA000 class=cShort size=80
+OBJECT id=oOddSize addr=0xB000 class=cShort size="many"
+EDGE from=oStatic to=oCache strength=strong label="cache"
+EDGE from=oStatic to=oSession strength=strong label="session"
+EDGE from=oCache to=oBmp1 strength=strong label="entry[0]"
+EDGE from=oCache to=oBmp2 strength=strong label="entry[1]"
+EDGE from=oSession to=oListener strength=strong label="listener"
+EDGE from=oListener to=oLeak strength=strong label="callback.activity"
+EDGE from=oLeak to=oBmpLeak strength=internal label="mSurface"
+EDGE from=oLeak to=oWeakTarget strength=weak label="weakRef"
+EDGE from=oSession to=oA strength=strong label="ringIn"
+EDGE from=oA to=oB strength=strong label="next"
+EDGE from=oB to=oA strength=strong label="prev"
+EDGE from=oStatic to=oShared strength=strong label="pathA"
+EDGE from=oSession to=oShared strength=strong label="pathB"
+EDGE from=oCache to=oDupA strength=weak label="dupWeakA"
+ROOT id=oStatic kind=system-class label="ChatClient.INSTANCE"
+ROOT id=oSession kind=jni-global label="nativeSession"
+ROOT id=oLeak kind=java-frame label="staleFrame"

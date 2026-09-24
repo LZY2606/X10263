@@ -1,0 +1,6 @@
+HSNAP v1
+CLASS id=cX name="X"
+OBJECT id=o1 addr=0x10 class=cX size=128
+EDGE from=o1 to=oGhost strength=strong label="dangling"
+THIS IS NOT A VALID RECORD
+ROOT id=oGhost kind=jni-global label="ghost"
