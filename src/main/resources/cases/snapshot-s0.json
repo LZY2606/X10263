@@ -1,0 +1,57 @@
+{
+  "header": {
+    "snapshotId": "snap-s0",
+    "parserVersion": "heap-parser/3.4.1",
+    "formatVersion": "hsf-1.2",
+    "takenAt": "2026-09-20T02:11:43Z",
+    "timeBasis": "UTC",
+    "addressUnit": "byte",
+    "sizeUnit": "B"
+  },
+  "classes": [
+    {"classId": "class-1", "name": "runtime.Service", "superClassId": null},
+    {"classId": "class-2", "name": "cache.EntryHolder", "superClassId": null},
+    {"classId": "class-3", "name": "util.WeakTarget", "superClassId": null},
+    {"classId": "class-4", "name": "util.SessionKey", "superClassId": null},
+    {"classId": "class-5", "name": "io.PartialBuffer", "superClassId": null},
+    {"classId": "class-6", "name": "app.RegistryNode", "superClassId": null}
+  ],
+  "allocationSites": [
+    {"siteId": "site-1", "location": "runtime/Service.kt:48:14", "frameBasis": "Service.kt:48", "line": 48, "column": 14},
+    {"siteId": "site-2", "location": "cache/EntryHolder.kt:120:9", "frameBasis": "EntryHolder.kt:120", "line": 120, "column": 9},
+    {"siteId": "site-3", "location": "util/WeakTarget.kt:17:5", "frameBasis": "WeakTarget.kt:17", "line": 17, "column": 5},
+    {"siteId": "site-6", "location": "app/RegistryNode.kt:60:2", "frameBasis": "RegistryNode.kt:60", "line": 60, "column": 2}
+  ],
+  "objects": [
+    {"objectId": "obj-A", "address": "0x7f0001", "classId": "class-1", "shallowSize": "512 B", "allocationSiteId": "site-1"},
+    {"objectId": "obj-B", "address": "0x7f0002", "classId": "class-6", "shallowSize": "768 B", "allocationSiteId": "site-6"},
+    {"objectId": "obj-CACHE", "address": "0x7f0010", "classId": "class-2", "shallowSize": "2048 B", "allocationSiteId": "site-2"},
+    {"objectId": "obj-WTARGET", "address": "0x7f0011", "classId": "class-3", "shallowSize": "4096 B", "allocationSiteId": "site-3"},
+    {"objectId": "obj-D1", "address": "0x7f0100", "classId": "class-4", "shallowSize": "256 B"},
+    {"objectId": "obj-D2", "address": "0x7f0100", "classId": "class-4", "shallowSize": "256 B"},
+    {"objectId": "obj-P", "address": "0x7f0200", "classId": "class-5", "shallowSize": {"raw": "N/A", "value": null, "unit": null}, "incomplete": true},
+    {"objectId": "obj-R1", "address": "0x7f0301", "classId": "class-6", "shallowSize": "128 B"},
+    {"objectId": "obj-R2", "address": "0x7f0302", "classId": "class-6", "shallowSize": "128 B"},
+    {"objectId": "obj-X", "address": "0x7f0310", "classId": "class-4", "shallowSize": "8192 B"},
+    {"objectId": "obj-H", "address": "0x7f0400", "classId": "class-2", "shallowSize": "16384 B", "allocationSiteId": "site-2"}
+  ],
+  "edges": [
+    {"edgeId": "edge-a-b", "from": "obj-A", "to": "obj-B", "kind": "strong", "label": "registry"},
+    {"edgeId": "edge-b-a", "from": "obj-B", "to": "obj-A", "kind": "strong", "label": "back"},
+    {"edgeId": "edge-root-cache", "from": "obj-A", "to": "obj-CACHE", "kind": "strong", "label": "cache"},
+    {"edgeId": "edge-cache-w", "from": "obj-CACHE", "to": "obj-WTARGET", "kind": "weak", "label": "weakValue"},
+    {"edgeId": "edge-r1-x", "from": "obj-R1", "to": "obj-X", "kind": "strong", "label": "viaR1"},
+    {"edgeId": "edge-r2-x", "from": "obj-R2", "to": "obj-X", "kind": "strong", "label": "viaR2"},
+    {"edgeId": "edge-a-h", "from": "obj-A", "to": "obj-H", "kind": "internal", "label": "outer$0"},
+    {"edgeId": "edge-h-p", "from": "obj-H", "to": "obj-P", "kind": "strong", "label": "partial"},
+    {"edgeId": "edge-x-d1", "from": "obj-X", "to": "obj-D1", "kind": "strong", "label": "d1"}
+  ],
+  "roots": [
+    {"rootId": "root-service", "objectId": "obj-A", "kind": "static_field", "label": "Service.theService"},
+    {"rootId": "root-1", "objectId": "obj-R1", "kind": "static_field", "label": "Registry.primary"},
+    {"rootId": "root-2", "objectId": "obj-R2", "kind": "java_local", "label": "local@thread-7"}
+  ],
+  "incompleteBlocks": [
+    {"blockId": "block-1", "offsetStart": "8192 B", "offsetEnd": "16383 B", "reason": "truncated segment: CRC mismatch at 8192"}
+  ]
+}

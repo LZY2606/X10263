@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>堆影取证室 · 内存快照 / 弱引用边 / 保留路径候选</title>
+<link rel="stylesheet" href="/web/styles.css"/>
+</head>
+<body>
+<header>
+  <h1>堆影取证室</h1>
+  <span class="meta" id="projMeta">加载中…</span>
+  <span style="flex:1"></span>
+  <button class="small" onclick="exportProject()">导出项目 (.zip)</button>
+  <label class="small">导入导出包
+    <input type="file" id="reimportFile" accept=".zip" style="display:none" onchange="reimport(this)"/>
+  </label>
+  <button class="small" onclick="document.getElementById('reimportFile').click()">再导入…</button>
+</header>
+<div class="layout">
+  <div class="panel scroll">
+    <h2>快照 / 结果 / 事件</h2>
+    <div class="row">
+      <select id="snapshotSel" onchange="loadSnapshot()"></select>
+    </div>
+    <div class="row">
+      <select id="resultSel" onchange="loadResult()"></select>
+      <button class="small" onclick="reanalyze()">用所选策略重算</button>
+      <select id="policySel"><option value="policy-v1">policy-v1 弱不保活</option><option value="policy-v2">policy-v2 弱保活</option></select>
+    </div>
+    <div class="row">
+      <button class="small" onclick="loadDiff()">两快照类群差异</button>
+      <button class="small" onclick="loadArchive('boundary-cases')">反例档案</button>
+      <button class="small" onclick="loadArchive('dominator-principles')">支配原则分支</button>
+    </div>
+    <h2>事件账本（点击回到当时）</h2>
+    <div id="events"></div>
+  </div>
+
+  <div class="panel scroll">
+    <div id="basis" class="basis"></div>
+    <div id="invalid" class="invalid" style="display:none"></div>
+    <h2>对象图（服务端 SVG，含支配边）</h2>
+    <div id="svg" class="svg-wrap"></div>
+    <h2>对象表 · 支配父级 · 保留大小 · 稳定身份</h2>
+    <div id="nodes"></div>
+    <h2>两快照类群差异</h2>
+    <div id="diff"></div>
+    <h2>反例 / 判断依据（机器可读）</h2>
+    <div id="archive"></div>
+  </div>
+
+  <div class="panel scroll">
+    <h2>证据往返</h2>
+    <div id="detail" class="muted">在对象表中选择一个对象，查看原始材料、支配父级、保留大小与全部 root 路径。</div>
+    <h2>原始材料核对</h2>
+    <div id="rawPanel"></div>
+    <h2>人工决定（不覆盖历史）</h2>
+    <div id="decisions"></div>
+  </div>
+</div>
+<script src="/web/app.js"></script>
+</body>
+</html>
