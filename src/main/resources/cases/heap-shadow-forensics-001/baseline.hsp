@@ -1,0 +1,50 @@
+# 堆影取证室 / Heap Shadow Forensics Lab
+# 离线案例包 heap-shadow-forensics-001 —— 基线快照（首版）
+# 原始对象 id、地址、类元数据、强/弱/内部边、root 分类、不完整块、解析器版本全部保留。
+SNAPSHOT S7701 线上支付进程-基线 hsp-v1 2026-09-20T08:00:00+08:00 bytes
+
+ALLOCATION_SITE site-main   static-init   Main.kt:12
+ALLOCATION_SITE site-cache  lazy-singleton PaymentCache.kt:34
+ALLOCATION_SITE site-queue  worker-queue  RetryQueue.kt:58
+ALLOCATION_SITE site-leak  listener-reg  EventBus.kt:77
+
+CLASS C1 PaymentCache    site-cache  KEY k-payment-cache
+CLASS C2 RetryQueue      site-queue  KEY k-retry-queue
+CLASS C3 EventListener   site-leak   KEY k-event-listener
+CLASS C4 RequestContext  site-main   KEY k-request-context
+CLASS C5 NativeBuffer    site-main   KEY k-native-buffer
+CLASS C6 WeakRefBox      site-main   KEY k-weak-ref-box
+
+# 两个不同对象在基线中位于同一地址（压缩前重叠观察）—— 地址不得当作稳定身份。
+OBJECT O1 C1 0x0000000A00001000 256b  SITE site-cache
+OBJECT O2 C2 0x0000000A00001000 128b  SITE site-queue
+OBJECT O3 C3 0x0000000A00002000 96b   SITE site-leak
+OBJECT O4 C4 0x0000000A00003000 64b   SITE site-main
+OBJECT O5 C5 0x0000000A00004000 2048b
+# 不完整对象：对象头可读、字段截断，INCOMPLETE 显式标记保留。
+OBJECT O6 C3 0x0000000A00005000 160b  SITE site-leak INCOMPLETE
+# 无法转换的大小：保留原值与诊断，派生层不得丢弃。
+OBJECT O7 C6 0x0000000A00006000 NaN-size
+# 弱引用盒：弱引用策略关闭时，目标只经由弱边到达 => 不可达。
+OBJECT O8 C3 0x0000000A00007000 80b   SITE site-leak
+# 仅由 O6 经内部边引用的对象（内部边默认保活）
+OBJECT O9 C5 0x0000000A00008000 512b
+
+# 循环图：O1 <-> O2 构成强引用环。
+EDGE O1 O2 strong FIELD queue
+EDGE O2 O1 strong FIELD cacheBackRef
+# 泄漏结构：静态缓存 O1 强引用监听器 O3，O3 再持有上下文 O4。
+EDGE O1 O3 strong FIELD listeners
+EDGE O3 O4 strong FIELD ctx
+# 弱引用：O1 -.weak.-> O8（weak 不保活时 O8 应不可达）
+EDGE O1 O8 weak   FIELD weakObserver
+# 内部边：JVM 实现持有，默认保活但可由策略关闭
+EDGE O6 O9 internal
+# 第二个等长 root 链：O2 -> O3，使 O3 拥有两条等长 root 路径
+EDGE O2 O3 strong FIELD spareListener
+
+ROOT O1 JNI_GLOBAL   payment-cache-singleton
+ROOT O2 JNI_GLOBAL   retry-queue-singleton
+
+INCOMPLETE BLOCK-OBJECT-TABLE truncated-object-fields "O6 字段段在块偏移 0x520 截断，仅保留对象头"
+INCOMPLETE BLOCK-ROOT-SCAN    partial-root-table    "root 表扫描被 GC 中断，缺失区间 0x9000-0x9100"

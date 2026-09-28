@@ -1,0 +1,18 @@
+{
+  "casePackage": "heap-shadow-forensics-001",
+  "title": "堆影取证室：内存快照、弱引用边与保留路径候选",
+  "narrative": "运行时团队导入支付进程两个快照，审查 PaymentCache 单例经 EventBus 监听器链保留的 RetryQueue/RequestContext；基线含循环图、重复地址、不完整对象、不可转换大小与多 root 等长路径；修订版完成一次弱引用参数修订、一次局部源改动（重复地址修正）和一次互相冲突的人工决定，并验证类改名身份对应。",
+  "snapshots": [
+    { "file": "baseline.hsp", "role": "BASELINE", "identity": "S7701" },
+    { "file": "revised.hsp",  "role": "REVISED",  "identity": "S7702" }
+  ],
+  "checkpoints": [
+    "IMPORT_BASELINE_PRESERVED",
+    "WEAK_POLICY_V1_FALSE",
+    "WEAK_POLICY_V2_TRUE_CONFLICTING_DECISION",
+    "LOCALIZED_PATCH_DUPLICATE_ADDRESS",
+    "CLASS_RENAME_CORRESPONDENCE",
+    "MULTIPLE_EQUAL_ROOT_PATHS",
+    "DOMINATORS_ON_REACHABLE_ONLY"
+  ]
+}

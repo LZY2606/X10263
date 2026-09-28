@@ -1,0 +1,44 @@
+# 堆影取证室 / Heap Shadow Forensics Lab —— 修订快照（参数修订 + 局部源改动后）
+# 类改名通过显式 CORRESPOND 指令建立身份对应；名称变化不改变类身份。
+SNAPSHOT S7702 线上支付进程-修订 hsp-v1 2026-09-27T08:00:00+08:00 bytes
+
+ALLOCATION_SITE site-main   static-init   Main.kt:12
+ALLOCATION_SITE site-cache  lazy-singleton PaymentCacheV2.kt:41
+ALLOCATION_SITE site-queue  worker-queue  RetryQueue.kt:58
+ALLOCATION_SITE site-leak  listener-reg  EventBus.kt:77
+
+# C3 在新快照中改名为 SubscriptionWatcher，通过 CORRESPOND 与旧 key 对应。
+CLASS C1 PaymentCacheV2  site-cache  KEY k-payment-cache
+CLASS C2 RetryQueue      site-queue  KEY k-retry-queue
+CLASS C3 SubscriptionWatcher site-leak KEY k-subscription-watcher
+CLASS C4 RequestContext  site-main   KEY k-request-context
+CLASS C5 NativeBuffer    site-main   KEY k-native-buffer
+CLASS C6 WeakRefBox      site-main   KEY k-weak-ref-box
+CLASS C7 NewReloadConfig site-main   KEY k-reload-config
+
+# 重复地址情形已被运行时修正：O1/O2 地址分开（重复地址只存在于基线，验证局部改动范围）。
+OBJECT O1 C1 0x0000000B00001000 300b  SITE site-cache
+OBJECT O2 C2 0x0000000B00009000 128b  SITE site-queue
+OBJECT O3 C3 0x0000000B00002000 144b  SITE site-leak
+OBJECT O4 C4 0x0000000B00003000 64b   SITE site-main
+OBJECT O5 C5 0x0000000B00004000 2048b
+OBJECT O6 C3 0x0000000B00005000 160b  SITE site-leak
+OBJECT O7 C6 0x0000000B00006000 48b
+OBJECT O8 C3 0x0000000B00007000 80b   SITE site-leak
+OBJECT O9 C5 0x0000000B00008000 512b
+OBJECT O10 C7 0x0000000B0000A000 16b SITE site-main
+
+EDGE O1 O2 strong FIELD queue
+EDGE O2 O1 strong FIELD cacheBackRef
+EDGE O1 O3 strong FIELD listeners
+EDGE O3 O4 strong FIELD ctx
+EDGE O1 O8 weak   FIELD weakObserver
+EDGE O6 O9 internal
+EDGE O2 O3 strong FIELD spareListener
+EDGE O1 O10 strong FIELD reloadConfig
+
+ROOT O1 JNI_GLOBAL   payment-cache-singleton
+ROOT O2 JNI_GLOBAL   retry-queue-singleton
+ROOT O10 SYSTEM_CLASS reload-config-root
+
+CORRESPOND class k-event-listener = k-subscription-watcher "改名 EventListener -> SubscriptionWatcher；显式身份对应"
