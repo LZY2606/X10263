@@ -1,0 +1,13 @@
+{
+  "snapshotId": "snap-semantic",
+  "parserVersion": "heap-shadow-parser/1.4.0",
+  "addressBasis": "heap", "sizeUnitBasis": "byte",
+  "objects": [
+    {"objectId": "dup", "address": "0x1", "classId": "c-x", "shallowSize": "1 byte"},
+    {"objectId": "dup", "address": "0x2", "classId": "c-x", "shallowSize": "1 byte"}
+  ],
+  "classes": [{"classId": "c-x", "name": "X"}],
+  "edges": [{"edgeId": "dangling", "fromId": "dup", "toId": "ghost", "kind": "strong"}],
+  "roots": [{"objectId": "ghost", "kind": "native-stack"}],
+  "incompleteChunks": []
+}

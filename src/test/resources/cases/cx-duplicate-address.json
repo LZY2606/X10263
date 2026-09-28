@@ -1,0 +1,23 @@
+{
+  "snapshotId": "snap-cx-dupaddr",
+  "sourceName": "cx-duplicate-address.json",
+  "parserVersion": "heap-shadow-parser/1.4.0",
+  "addressBasis": "JVM heap virtual address, hex, 0-based",
+  "sizeUnitBasis": "byte",
+  "objects": [
+    {"objectId": "x-1", "address": "0x7777", "classId": "c-a", "shallowSize": "100 byte"},
+    {"objectId": "x-2", "address": "0x7777", "classId": "c-b", "shallowSize": "200 byte"},
+    {"objectId": "rootx", "address": "0x01", "classId": "c-root", "shallowSize": "8 byte"}
+  ],
+  "classes": [
+    {"classId": "c-a", "name": "A"},
+    {"classId": "c-b", "name": "B"},
+    {"classId": "c-root", "name": "Root"}
+  ],
+  "edges": [
+    {"edgeId": "de-1", "fromId": "rootx", "toId": "x-1", "kind": "strong"},
+    {"edgeId": "de-2", "fromId": "rootx", "toId": "x-2", "kind": "strong"}
+  ],
+  "roots": [{"rootId": "dxr", "objectId": "rootx", "kind": "system-class"}],
+  "incompleteChunks": []
+}

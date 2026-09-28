@@ -1,0 +1,19 @@
+{
+  "caseTitle": "堆影取证室：内存快照、弱引用边与保留路径候选",
+  "narrative": [
+    {"stage": 1, "title": "初始导入与原始核对", "resource": "baseline.json",
+     "checklist": ["原始对象 id", "地址与地址基准", "类元数据与 allocation site", "强/弱/内部边", "root 分类", "不完整块", "解析器版本"]},
+    {"stage": 2, "title": "参数修订（弱引用保活策略）", "resource": null,
+     "action": "reviseParams", "expects": "弱可达集合随显式策略变化，基线材料不变"},
+    {"stage": 3, "title": "第二快照与类群差异", "resource": "snapshot-B.json",
+     "expects": "类改名通过 canonical 身份对应呈现，地址不参与身份"},
+    {"stage": 4, "title": "反例档案回放", "resource": "cx-*.json",
+     "scenarios": ["cycle", "weak-policy", "duplicate-address", "incomplete-object", "equal-root-paths", "class-rename", "snapshot-identity"]},
+    {"stage": 5, "title": "互相冲突的人工决定", "resource": null,
+     "actions": ["ACCEPT 泄漏候选", "REJECT 同一候选并给出依据"], "expects": "两个决定都保留，投影按时间恢复"},
+    {"stage": 6, "title": "导出/删除/再导入复核", "resource": null, "expects": "身份、顺序、来源关系保持"}
+  ],
+  "classCorrespondence": [
+    {"canonicalId": "canonical:CacheEntry", "members": {"snap-A": "c-entry", "snap-B": "c-cachex"}}
+  ]
+}

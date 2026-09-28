@@ -1,0 +1,23 @@
+{
+  "snapshotId": "snap-cx-weak",
+  "sourceName": "cx-weak-policy.json",
+  "parserVersion": "heap-shadow-parser/1.4.0",
+  "addressBasis": "JVM heap virtual address, hex, 0-based",
+  "sizeUnitBasis": "byte",
+  "objects": [
+    {"objectId": "holder", "address": "0x10", "classId": "c-holder", "shallowSize": "16 byte"},
+    {"objectId": "ref", "address": "0x20", "classId": "c-weakref", "shallowSize": "16 byte"},
+    {"objectId": "target", "address": "0x30", "classId": "c-big", "shallowSize": "4096 byte"}
+  ],
+  "classes": [
+    {"classId": "c-holder", "name": "Holder"},
+    {"classId": "c-weakref", "name": "WeakReference"},
+    {"classId": "c-big", "name": "BigTarget"}
+  ],
+  "edges": [
+    {"edgeId": "we-1", "fromId": "holder", "toId": "ref", "kind": "strong"},
+    {"edgeId": "we-2", "fromId": "ref", "toId": "target", "kind": "weak", "field": "referent"}
+  ],
+  "roots": [{"rootId": "wr", "objectId": "holder", "kind": "native-stack"}],
+  "incompleteChunks": []
+}

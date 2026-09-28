@@ -1,0 +1,38 @@
+{
+  "snapshotId": "snap-B",
+  "sourceName": "heaps-after.hprof.json",
+  "parserVersion": "heap-shadow-parser/1.4.1",
+  "formatVersion": "hsf/2",
+  "capturedAtBasis": "UTC epoch millis",
+  "capturedAtRaw": "1726390600555",
+  "addressBasis": "JVM heap virtual address, hex, 0-based",
+  "sizeUnitBasis": "byte (SI count, heap layout)",
+  "objects": [
+    {"objectId": "obj-10", "address": "0x1100", "classId": "c-cache", "shallowSize": "32 byte", "allocationSiteId": "site-1"},
+    {"objectId": "obj-11", "address": "0x2200", "classId": "c-cache", "shallowSize": "2 KiB"},
+    {"objectId": "obj-12", "address": "0x3300", "classId": "c-cachex", "shallowSize": "4096 byte", "allocationSiteId": "site-2"},
+    {"objectId": "obj-13", "address": "0x4400", "classId": "c-cachex", "shallowSize": "16 byte"},
+    {"objectId": "obj-14", "address": "0x5500", "classId": "c-thread", "shallowSize": "8192 byte"},
+    {"objectId": "obj-15", "address": "0x6600", "classId": "c-cachex", "shallowSize": "512 byte"}
+  ],
+  "classes": [
+    {"classId": "c-cache", "name": "com.runtime.Cache", "classLoaderId": "cl-1", "allocationSiteId": "site-1"},
+    {"classId": "c-cachex", "name": "com.runtime.CacheEntryV2", "classLoaderId": "cl-1", "allocationSiteId": "site-2"},
+    {"classId": "c-thread", "name": "java.lang.Thread", "classLoaderId": "cl-0"}
+  ],
+  "edges": [
+    {"edgeId": "e-10", "fromId": "obj-10", "toId": "obj-11", "kind": "strong", "field": "head"},
+    {"edgeId": "e-11", "fromId": "obj-11", "toId": "obj-12", "kind": "strong", "field": "entry"},
+    {"edgeId": "e-12", "fromId": "obj-12", "toId": "obj-13", "kind": "internal", "field": "<payload>"},
+    {"edgeId": "e-13", "fromId": "obj-12", "toId": "obj-15", "kind": "strong", "field": "next"},
+    {"edgeId": "e-14", "fromId": "obj-14", "toId": "obj-10", "kind": "strong", "field": "localCache"}
+  ],
+  "roots": [
+    {"rootId": "r-10", "objectId": "obj-14", "kind": "system-class", "origin": "main.run:43"}
+  ],
+  "allocationSites": [
+    {"siteId": "site-1", "rawLocation": "Cache.java", "coordinateBasis": "source line", "coordinate": "18", "method": "<init>"},
+    {"siteId": "site-2", "rawLocation": "CacheEntryV2.java", "coordinateBasis": "source line", "coordinate": "9", "method": "<init>"}
+  ],
+  "incompleteChunks": []
+}

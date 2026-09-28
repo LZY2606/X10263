@@ -1,0 +1,20 @@
+{
+  "snapshotId": "snap-cx-identity",
+  "sourceName": "cx-snapshot-identity.json",
+  "parserVersion": "heap-shadow-parser/1.4.0",
+  "addressBasis": "JVM heap virtual address, hex, 0-based",
+  "sizeUnitBasis": "byte",
+  "objects": [
+    {"objectId": "same-obj-id", "address": "0x1000", "classId": "c-k", "shallowSize": "10 byte"},
+    {"objectId": "zz-root", "address": "0x01", "classId": "c-root", "shallowSize": "8 byte"}
+  ],
+  "classes": [
+    {"classId": "c-k", "name": "K"},
+    {"classId": "c-root", "name": "Root"}
+  ],
+  "edges": [
+    {"edgeId": "se-1", "fromId": "zz-root", "toId": "same-obj-id", "kind": "strong"}
+  ],
+  "roots": [{"rootId": "sr", "objectId": "zz-root", "kind": "system-class"}],
+  "incompleteChunks": []
+}

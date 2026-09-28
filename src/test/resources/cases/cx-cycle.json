@@ -1,0 +1,25 @@
+{
+  "snapshotId": "snap-cx-cycle",
+  "sourceName": "cx-cycle.json",
+  "parserVersion": "heap-shadow-parser/1.4.0",
+  "addressBasis": "JVM heap virtual address, hex, 0-based",
+  "sizeUnitBasis": "byte",
+  "objects": [
+    {"objectId": "a", "address": "0xa0", "classId": "c-node", "shallowSize": "64 byte"},
+    {"objectId": "b", "address": "0xb0", "classId": "c-node", "shallowSize": "64 byte"},
+    {"objectId": "c", "address": "0xc0", "classId": "c-node", "shallowSize": "64 byte"},
+    {"objectId": "r", "address": "0x01", "classId": "c-root", "shallowSize": "8 byte"}
+  ],
+  "classes": [
+    {"classId": "c-node", "name": "Node"},
+    {"classId": "c-root", "name": "Root"}
+  ],
+  "edges": [
+    {"edgeId": "ce-1", "fromId": "r", "toId": "a", "kind": "strong"},
+    {"edgeId": "ce-2", "fromId": "a", "toId": "b", "kind": "strong"},
+    {"edgeId": "ce-3", "fromId": "b", "toId": "c", "kind": "strong"},
+    {"edgeId": "ce-4", "fromId": "c", "toId": "a", "kind": "strong", "field": "back"}
+  ],
+  "roots": [{"rootId": "cr", "objectId": "r", "kind": "jni-global"}],
+  "incompleteChunks": []
+}

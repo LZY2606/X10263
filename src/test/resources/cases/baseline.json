@@ -1,0 +1,42 @@
+{
+  "snapshotId": "snap-A",
+  "sourceName": "heaps-baseline.hprof.json",
+  "parserVersion": "heap-shadow-parser/1.4.0",
+  "formatVersion": "hsf/2",
+  "capturedAtBasis": "UTC epoch millis",
+  "capturedAtRaw": "1726390000123",
+  "addressBasis": "JVM heap virtual address, hex, 0-based",
+  "sizeUnitBasis": "byte (SI count, heap layout)",
+  "objects": [
+    {"objectId": "obj-1", "address": "0x1000", "classId": "c-cache", "shallowSize": "32 byte", "allocationSiteId": "site-1"},
+    {"objectId": "obj-2", "address": "0x2000", "classId": "c-cache", "shallowSize": "2 KiB", "allocationSiteId": "site-1"},
+    {"objectId": "obj-3", "address": "0x3000", "classId": "c-entry", "shallowSize": "4096 byte", "allocationSiteId": "site-2"},
+    {"objectId": "obj-4", "address": "0x4000", "classId": "c-entry", "shallowSize": "16 byte"},
+    {"objectId": "obj-5", "address": "0x5000", "classId": "c-thread", "shallowSize": "8192 byte"},
+    {"objectId": "obj-6", "address": "0x6000", "classId": "c-unreachable", "shallowSize": "300 byte"},
+    {"objectId": "obj-7", "address": "0x6060", "classId": "c-weakref", "shallowSize": "16 byte"}
+  ],
+  "classes": [
+    {"classId": "c-cache", "name": "com.runtime.Cache", "classLoaderId": "cl-1", "allocationSiteId": "site-1", "instanceSize": "24 byte"},
+    {"classId": "c-entry", "name": "com.runtime.CacheEntry", "classLoaderId": "cl-1", "allocationSiteId": "site-2"},
+    {"classId": "c-thread", "name": "java.lang.Thread", "classLoaderId": "cl-0"},
+    {"classId": "c-unreachable", "name": "com.runtime.Garbage", "classLoaderId": "cl-1"},
+    {"classId": "c-weakref", "name": "java.lang.ref.WeakReference", "classLoaderId": "cl-0"}
+  ],
+  "edges": [
+    {"edgeId": "e-1", "fromId": "obj-1", "toId": "obj-2", "kind": "strong", "field": "head"},
+    {"edgeId": "e-2", "fromId": "obj-2", "toId": "obj-3", "kind": "strong", "field": "entry"},
+    {"edgeId": "e-3", "fromId": "obj-3", "toId": "obj-4", "kind": "internal", "field": "<payload>"},
+    {"edgeId": "e-4", "fromId": "obj-5", "toId": "obj-1", "kind": "strong", "field": "localCache"},
+    {"edgeId": "e-5", "fromId": "obj-5", "toId": "obj-7", "kind": "strong", "field": "refHolder"},
+    {"edgeId": "e-6", "fromId": "obj-7", "toId": "obj-6", "kind": "weak", "field": "referent"}
+  ],
+  "roots": [
+    {"rootId": "r-1", "objectId": "obj-5", "kind": "native-stack", "origin": "main.run:42"}
+  ],
+  "allocationSites": [
+    {"siteId": "site-1", "rawLocation": "Cache.java", "coordinateBasis": "source line", "coordinate": "18", "method": "<init>"},
+    {"siteId": "site-2", "rawLocation": "CacheEntry.java", "coordinateBasis": "source line", "coordinate": "9", "method": "<init>"}
+  ],
+  "incompleteChunks": []
+}

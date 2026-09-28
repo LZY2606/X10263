@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>堆影取证室 · 内存快照/弱引用边/保留路径候选</title>
+<style>
+  :root { --bd:#d9e0ea; --mut:#6b7787; --acc:#1f5fbf; --warn:#b08900; --bad:#b42318; --ok:#0a7d33; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:13px/1.5 -apple-system,"Segoe UI",sans-serif; color:#1d2733; background:#f5f7fa; }
+  header { padding:10px 16px; background:#12203a; color:#fff; display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+  header h1 { font-size:15px; margin:0; font-weight:600; }
+  header .sub { color:#aebdd4; font-size:12px; }
+  main { padding:12px 16px; max-width:1400px; margin:0 auto; }
+  .timeline { position:sticky; top:0; z-index:5; background:#fff; border:1px solid var(--bd); border-radius:8px; padding:8px 12px; margin-bottom:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .timeline input[type=range]{ flex:1; min-width:200px; }
+  section { background:#fff; border:1px solid var(--bd); border-radius:8px; padding:12px 14px; margin-bottom:12px; }
+  section h2 { font-size:14px; margin:0 0 8px; display:flex; gap:8px; align-items:center; }
+  .tag { font-size:11px; padding:1px 7px; border-radius:10px; background:#eef3fb; color:var(--acc); border:1px solid #cdddf5; }
+  .tag.warn{ background:#fdf6e3; color:var(--warn); border-color:#ecd9a0;}
+  .tag.bad{ background:#fdecea; color:var(--bad); border-color:#f3c2bd;}
+  .tag.ok{ background:#eaf7ef; color:var(--ok); border-color:#bfe3cc;}
+  table{ border-collapse:collapse; width:100%; font-size:12px; }
+  th,td{ border-bottom:1px solid #eef1f5; padding:4px 8px; text-align:left; vertical-align:top; }
+  th{ color:var(--mut); font-weight:600; background:#fafbfd; position:sticky; top:0; }
+  .sid{ font-family:ui-monospace,Menlo,monospace; color:#334; }
+  .scroll{ max-height:380px; overflow:auto; border:1px solid #eef1f5; border-radius:6px; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media(max-width:1000px){ .grid2{grid-template-columns:1fr} }
+  .muted{ color:var(--mut); }
+  .basis{ font-size:11px; color:var(--mut); margin-top:6px; }
+  .path{ font-family:ui-monospace,Menlo,monospace; font-size:11px; }
+  button{ border:1px solid #b9c6d8; background:#fff; border-radius:6px; padding:4px 10px; cursor:pointer; font-size:12px;}
+  button.primary{ background:var(--acc); color:#fff; border-color:var(--acc);}
+  button:disabled{ opacity:.5; cursor:not-allowed; }
+  input,select,textarea{ border:1px solid #c5cfdd; border-radius:6px; padding:4px 8px; font-size:12px; }
+  .svgwrap{ overflow:auto; border:1px solid #eef1f5; border-radius:6px; background:#fcfdff; }
+  details{ margin:4px 0; }
+  summary{ cursor:pointer; font-weight:600; }
+  .kv{ display:grid; grid-template-columns:170px 1fr; gap:2px 10px; font-size:12px; }
+  .diag{ color:var(--bad); font-size:11px; }
+  .legend span{ margin-right:12px; font-size:11px; color:var(--mut); }
+  .swatch{ display:inline-block;width:18px;height:0;border-top:2px solid;vertical-align:middle;margin-right:4px;}
+  .event{ border-left:3px solid var(--bd); padding:4px 8px; margin:4px 0; background:#fafbfd; border-radius:0 6px 6px 0;}
+  .event.current{ border-left-color:var(--acc); background:#eef3fb; }
+  .row-actions button{ margin-right:6px; }
+  code{ background:#f2f4f8; padding:0 4px; border-radius:4px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>堆影取证室</h1>
+  <span class="sub">内存快照 · 弱引用边 · 保留路径候选 — 证据可往返、决定可回溯</span>
+  <span style="flex:1"></span>
+  <a class="sub" href="/api/cases/heap-shadow-demo/export" style="color:#cfe0ff">导出案例包</a>
+</header>
+<main>
+  <div class="timeline">
+    <strong>时间旅行</strong>
+    <input id="seq" type="range" min="0" max="0" value="0">
+    <span id="seqLabel" class="sid"></span>
+    <button id="reload">回到该事件</button>
+    <span class="muted">回到任意旧事件时恢复当时的依赖版本与可见结论，不用最新计算覆盖历史</span>
+  </div>
+
+  <section id="sec-materials">
+    <h2>① 原始材料核对 <span class="tag">不可变</span>
+      <span class="tag warn" id="validityTag" style="display:none"></span></h2>
+    <div id="materials"></div>
+  </section>
+
+  <section id="sec-params">
+    <h2>② 显式策略参数（参数版本）<span class="tag" id="paramVer"></span></h2>
+    <div class="grid2">
+      <div>
+        <label><input type="checkbox" id="weakAlive"> 弱引用保活（weakKeepsAlive）</label><br>
+        <label><input type="checkbox" id="internalAlive"> 内部边保活（internalKeepsAlive）</label><br>
+        <label>泄漏阈值 <input id="leakMin" type="number" style="width:110px"> byte</label>
+        <div class="basis">单位 byte；基准见每个快照的 sizeUnitBasis。无法转换的量保留原值并附诊断，不参与规范化。</div>
+      </div>
+      <div>
+        <button class="primary" id="revise">记录参数修订事件</button>
+        <button id="compute">重新计算（生成派生事件）</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="sec-graph">
+    <h2>③ 对象图 · 支配父级 · 保留大小 <span class="tag">SVG 服务端渲染</span></h2>
+    <div class="legend">
+      <span><i class="swatch" style="border-color:#555"></i>强引用</span>
+      <span><i class="swatch" style="border-color:#b08900;border-top-style:dashed"></i>弱引用（是否保活看参数）</span>
+      <span><i class="swatch" style="border-color:#7b4bb0;border-top-style:dotted"></i>内部边</span>
+      <span>● 绿框/圆点=root；红底=不完整对象</span>
+    </div>
+    <div id="graphs" class="svgwrap" style="margin-top:8px"></div>
+    <div class="basis">每个节点带稳定身份 <code>snapshotId:objectId</code>；地址仅展示并标注地址基准，绝不作为身份。
+      支配树只在可达图上构建（super-root 汇聚多个 root）。</div>
+  </section>
+
+  <section id="sec-retained">
+    <h2>④ 保留大小与泄漏路径候选</h2>
+    <div id="candidates" class="scroll"></div>
+  </section>
+
+  <section id="sec-paths">
+    <h2>⑤ Root 路径（等长候选全部保留）</h2>
+    <div id="paths" class="scroll"></div>
+  </section>
+
+  <section id="sec-diff">
+    <h2>⑥ 两个快照的类群差异 <span class="tag">canonical 稳定身份</span></h2>
+    <div id="diff"></div>
+  </section>
+
+  <section id="sec-cx">
+    <h2>⑦ 反例档案 <span class="tag warn">每个情形只改动一个直接来源</span></h2>
+    <div id="counterexamples"></div>
+  </section>
+
+  <section id="sec-events">
+    <h2>⑧ 事件账本（接受/否定/参数调整均为新事件）</h2>
+    <div id="events"></div>
+  </section>
+
+  <section id="sec-recovery">
+    <h2>⑨ 半写恢复与工作流</h2>
+    <div id="recovery"></div>
+    <div style="margin-top:8px">
+      <details>
+        <summary>导入额外快照（粘贴领域快照 JSON）</summary>
+        <textarea id="snapText" rows="6" style="width:100%" placeholder='{"snapshotId":...}'></textarea><br>
+        <button id="uploadSnap">导入</button>
+        <span id="uploadMsg" class="diag"></span>
+      </details>
+      <details style="margin-top:6px">
+        <summary>从导出包再导入（删除本地库后身份/顺序/来源关系仍保持）</summary>
+        <input type="file" id="bundleFile" accept="application/json">
+        <button id="importBundle">导入导出包</button>
+        <span id="bundleMsg" class="diag"></span>
+      </details>
+    </div>
+  </section>
+</main>
+<script>
+const CASE = "heap-shadow-demo";
+let STATE = null;
+async function api(path, opts){ const r = await fetch(path, opts); const j = await r.json().catch(()=>({ok:false,errors:[{message:"非 JSON 响应"}]})); if(!r.ok || j.ok===false){ throw (j.errors||[{message:r.statusText}]); } return j.data; }
+function el(html){ const t=document.createElement('template'); t.innerHTML=html.trim(); return t.content.firstElementChild; }
+function esc(s){ return String(s??"").replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+function renderMaterials(v){
+  const box = document.getElementById('materials'); box.innerHTML='';
+  v.snapshots.forEach(s=>{
+    const badSize = s.objects.filter(o=>o.shallowSize && o.shallowSize.value===null);
+    box.appendChild(el(`<details open><summary>快照 <span class="sid">${esc(s.snapshotId)}</span> · ${esc(s.sourceName)}
+      · 对象 ${s.objects.length} · 边 ${s.edges.length} · root ${s.roots.length} · 不完整块 ${s.incompleteChunks.length}</summary>
+      <div class="kv" style="margin-top:6px">
+        <span class="muted">解析器版本</span><span class="sid">${esc(s.parserVersion)} / ${esc(s.formatVersion||'?')}</span>
+        <span class="muted">时间基准/原始值</span><span>${esc(s.capturedAtBasis||'未声明')} · <code>${esc(s.capturedAtRaw||'缺失')}</code></span>
+        <span class="muted">地址基准</span><span>${esc(s.addressBasis||'未声明')}（地址不是稳定身份）</span>
+        <span class="muted">尺寸单位基准</span><span>${esc(s.sizeUnitBasis||'未声明')}</span>
+        <span class="muted">重复地址</span><span>${s.addressDuplicates.length? s.addressDuplicates.map(d=>`<code>0x${d.address.toString(16)}</code>→${d.objectIds.map(esc).join(',')}`).join('；'):'无'}</span>
+      </div>
+      <div class="scroll" style="max-height:220px;margin-top:6px"><table>
+        <tr><th>稳定身份</th><th>地址(仅显示)</th><th>类</th><th>浅尺寸(原始/单位)</th><th>allocation site</th><th>不完整</th></tr>
+        ${s.objects.map(o=>`<tr><td class="sid">${esc(s.snapshotId)}:${esc(o.objectId)}</td>
+          <td class="sid">${esc(o.addressRaw||'缺失')}</td>
+          <td>${esc(o.classId)}</td>
+          <td>${o.shallowSize? esc(o.shallowSize.raw)+' ['+esc(o.shallowSize.unit||'?')+']'+(o.shallowSize.value===null?' <span class="diag">⚠ '+esc(o.shallowSize.convertDiagnostic)+'</span>':''):'—'}</td>
+          <td class="sid">${esc(o.allocationSiteId||'—')}</td>
+          <td>${o.incomplete?'<span class="tag bad">是</span> '+esc(o.incompleteReason||''):'否'}</td></tr>`).join('')}
+      </table></div>
+      <div class="scroll" style="max-height:180px;margin-top:6px"><table>
+        <tr><th>edgeId</th><th>from</th><th>to</th><th>类型</th><th>字段</th></tr>
+        ${s.edges.map(e=>`<tr><td class="sid">${esc(e.edgeId)}</td><td class="sid">${esc(e.fromId)}</td>
+          <td class="sid">${esc(e.toId)}</td><td>${esc(e.kind)}</td><td>${esc(e.field||'')}</td></tr>`).join('')}
+      </table></div>
+      <div class="muted" style="margin-top:4px">root 分类：${s.roots.map(r=>`<span class="sid">${esc(r.objectId)}=${esc(r.kind)}</span>`).join('，')||'无 root'}</div>
+      ${s.incompleteChunks.length?`<div class="diag">不完整块：${s.incompleteChunks.map(c=>`@${esc(c.position)} ${esc(c.reason)}`).join('；')}</div>`:''}
+      ${badSize.length?`<div class="diag">不可规范化的量保留在原位置：${badSize.map(o=>esc(o.objectId)+'='+esc(o.shallowSize.raw)).join('，')}</div>`:''}
+    </details>`);
+  });
+  const anyInvalid = v.analyses.some(a=>!a.validity.valid);
+  const tag=document.getElementById('validityTag');
+  if(anyInvalid){ tag.style.display='inline-block'; tag.textContent='有效区间受限（见失效原因）'; tag.className='tag bad'; }
+}
+
+function renderParams(v){
+  document.getElementById('paramVer').textContent='v'+v.params.paramVersion;
+  document.getElementById('weakAlive').checked=v.params.weakKeepsAlive;
+  document.getElementById('internalAlive').checked=v.params.internalKeepsAlive;
+  document.getElementById('leakMin').value=v.params.leakRetainedMinBytes;
+}
+
+function renderGraphs(payload){
+  const g=document.getElementById('graphs'); g.innerHTML='';
+  Object.entries(payload.graphs).forEach(([sid,svg])=>{
+    g.appendChild(el(`<div style="margin:6px"><div class="muted">快照 <span class="sid">${esc(sid)}</span> 的对象图</div>${svg}</div>`));
+  });
+  const trunc = payload.view.analyses.some(a=>a.rootPathTruncated);
+  if(trunc) g.prepend(el('<div class="diag">注意：部分对象的等长 root 路径候选超过预算被截断（结果带 truncated 标记，属资源预算结果而非成功伪装）。</div>'));
+}
+
+function renderCandidates(v){
+  const box=document.getElementById('candidates'); box.innerHTML='';
+  const decisionByTarget={}; v.decisions.forEach(d=>decisionByTarget[d.targetStableId]=d);
+  v.analyses.forEach(a=>{
+    box.appendChild(el(`<div style="margin:6px 0"><b>${esc(a.snapshotId)}</b>（参数 v${a.paramVersion}，阈值 ${v.params.leakRetainedMinBytes} byte）
+      ${a.validity.valid?'<span class="tag ok">有效</span>':'<span class="tag bad">有效区间受限</span>'}
+      ${a.rootPathTruncated?'<span class="tag warn">路径候选截断</span>':''}</div>`));
+    box.appendChild(el(`<table><tr><th>#</th><th>稳定身份</th><th>保留大小(byte)</th><th>支配父</th><th>最短root路径(边数)</th><th>判定依据</th><th>人工决定</th></tr>
+      ${a.leakCandidates.map(c=>{ const d=decisionByTarget[c.nodeId];
+        return `<tr><td>${c.rank}</td><td class="sid">${esc(c.nodeId)}</td><td>${c.retainedBytes}</td>
+        <td class="sid">${esc(c.dominatorNode||'SUPER_ROOT')}</td><td>${c.shortestRootPathLength??'—'}</td>
+        <td class="muted">${esc(c.reason)}</td>
+        <td class="row-actions">${d?`<span class="tag ${d.decision==='ACCEPT'?'ok':'bad'}">${esc(d.decision)}@seq${d.seq}</span>`:'未决'}
+          <button data-accept="${esc(c.nodeId)}" data-base="${esc(a.analysisId)}">接受</button>
+          <button data-reject="${esc(c.nodeId)}" data-base="${esc(a.analysisId)}">否定</button></td></tr>`;}).join('')}
+    </table>`));
+    if(!a.validity.valid){ box.appendChild(el(`<div class="diag">失效原因：${esc(a.validity.invalidReason)}；位置：${a.validity.invalidPositions.map(esc).join('，')}</div>`)); }
+  });
+}
+
+function renderPaths(v){
+  const box=document.getElementById('paths'); box.innerHTML='';
+  v.analyses.forEach(a=>{
+    const multi=Object.entries(a.rootPaths).filter(([,ps])=>ps.map(p=>p.nodeIds[0]).length);
+    const rows=Object.entries(a.rootPaths).sort((x,y)=>y[1].length-x[1].length).slice(0,40);
+    box.appendChild(el(`<details><summary><b>${esc(a.snapshotId)}</b>：root 路径（全部最短等长候选；显示前 40 个对象）</summary>
+      <table><tr><th>对象稳定身份</th><th>候选数</th><th>长度(边)</th><th>路径（root 分类 / 节点链）</th></tr>
+      ${rows.map(([node,ps])=>`<tr><td class="sid">${esc(node)}</td><td>${ps.length}${ps.length>1?' <span class="tag">多等长</span>':''}</td>
+        <td>${[...new Set(ps.map(p=>p.lengthEdges))].join(',')}</td>
+        <td>${ps.slice(0,6).map(p=>`<div class="path">[${esc(p.rootKind)}] ${p.nodeIds.map(esc).join(' → ')}</div>`).join('')}${ps.length>6?`<div class="muted">…其余 ${ps.length-6} 条候选同样保留</div>`:''}</td></tr>`).join('')}
+      </table></details>`));
+  });
+}
+
+function renderDiff(v){
+  const box=document.getElementById('diff'); box.innerHTML='';
+  if(!v.diff){ box.textContent='当前时间点仅有一个快照或尚未计算两快照差异。'; return; }
+  const d=v.diff;
+  box.appendChild(el(`<div class="muted">基线 <span class="sid">${esc(d.baseSnapshotId)}</span> → 目标 <span class="sid">${esc(d.targetSnapshotId)}</span>，参数 v${d.paramVersion}</div>`));
+  box.appendChild(el(`<div class="scroll"><table>
+    <tr><th>canonical 稳定身份</th><th>类名(目标)</th><th>改名</th><th>实例数 Δ</th><th>保留 byte Δ</th><th>仅存在于</th></tr>
+    ${d.deltas.map(x=>`<tr><td class="sid">${esc(x.canonicalId)}</td><td>${esc(x.className)}</td>
+      <td>${x.renamed?'<span class="tag warn">改名</span>':''}</td>
+      <td>${x.instanceCountDelta??'—'}</td><td>${x.retainedBytesDelta??'—'}</td>
+      <td class="sid">${esc(x.onlyInSnapshot||'')}</td></tr>`).join('')}
+  </table></div>`));
+}
+
+function renderCounterexamples(v){
+  const box=document.getElementById('counterexamples'); box.innerHTML='';
+  const map={}; v.counterexamples.forEach(c=>map[c.scenario]=c);
+  ['cycle','weak-policy','duplicate-address','incomplete-object','equal-root-paths','class-rename','snapshot-identity'].forEach(name=>{
+    const c=map[name];
+    if(!c) return;
+    const ok=c.judgmentStatus==='ACCEPTED';
+    box.appendChild(el(`<details><summary>${esc(name)} <span class="tag ${ok?'ok':c.judgmentStatus==='REJECTED'?'bad':'warn'}">${esc(c.judgmentStatus)}</span>
+      <span class="muted">${esc(c.note||'')}</span></summary>
+      <div class="kv">
+        <span class="muted">唯一改动来源</span><span>${esc('见输入片段 changedSource / '+(c.inputFragment.changedSource||''))}</span>
+        <span class="muted">受影响对象(稳定身份)</span><span class="sid">${(c.affectedObjectIds||[]).map(esc).join(', ')||'（导入期拒绝，无对象进入派生）'}</span>
+        <span class="muted">判定依据</span><span>${esc(c.rationale)}</span>
+        <span class="muted">采纳结果</span><span class="sid">${esc(c.adoptedResultId||'无')}</span>
+        <span class="muted">未采纳结果</span><span class="sid">${(c.rejectedResultIds||[]).map(esc).join(', ')||'无'}</span>
+        <span class="muted">输入片段</span><span><code>${esc(JSON.stringify(c.inputFragment))}</code></span>
+      </div></details>`));
+  });
+}
+
+function eventSummary(e){
+  switch(e.type){
+    case 'MaterialImported': return `材料导入 ${esc(e.snapshotId)}（${esc(e.importOutcome)}，${e.diagnostics?.length||0} 条诊断）`;
+    case 'ParamsRevised': return `参数修订 v${e.paramVersion}：weak=${e.weakKeepsAlive}, internal=${e.internalKeepsAlive}, 阈值=${e.leakRetainedMinBytes}`;
+    case 'DerivationComputed': return `派生计算 ${e.analysisIds.map(esc).join(', ')}${e.diffId?' + '+esc(e.diffId):''}`;
+    case 'DecisionRecorded': return `${esc(e.decision)} ${esc(e.targetStableId)}（${esc(e.rationale)}）`;
+    case 'CounterexampleRecorded': return `反例 ${esc(e.scenario)} → ${esc(e.judgmentStatus)}`;
+    default: return JSON.stringify(e).slice(0,80);
+  }
+}
+
+function renderEvents(payload){
+  const box=document.getElementById('events'); box.innerHTML='';
+  payload.view.events.forEach(e=>{
+    const deps=(e.parentEventIds||[]).map(esc).join(', ')||'—';
+    box.appendChild(el(`<div class="event ${e.seq===payload.currentSeq?'current':''}">
+      <b>#${e.seq}</b> <span class="tag">${esc(e.type||'')}</span> ${eventSummary(e)}
+      <div class="muted">事件身份 <span class="sid">${esc(e.eventId)}</span> · 父级依赖 <span class="sid">${deps}</span> · 时间基准 ${esc(e.timestampBasis)}</div>
+      ${e.note?`<div class="muted">${esc(e.note)}</div>`:''}
+    </details></div>`));
+  });
+  const total=payload.view.totalEvents;
+  const range=document.getElementById('seq');
+  range.max=Math.max(0,total-1); range.value=payload.currentSeq;
+  document.getElementById('seqLabel').textContent=`事件 ${payload.currentSeq} / ${Math.max(0,total-1)}`;
+}
+
+function renderRecovery(payload){
+  const box=document.getElementById('recovery');
+  const pw=payload.pendingWrites||[];
+  box.innerHTML = pw.length
+    ? `<div class="diag">检测到 ${pw.length} 条半写记录（启动时已回滚为 ROLLED_BACK，可重新提交）：${pw.map(p=>esc(p.txId)).join(', ')}</div>`
+    : '<span class="tag ok">无半写残留</span> 写入经 write_log 记录意图，崩溃后启动自动回滚未完成事务。';
+}
+
+async function load(seq){
+  const q = seq===undefined?'':`?seq=${seq}`;
+  const data=await api(`/api/cases/${CASE}/timeline${q}`);
+  STATE=data;
+  renderMaterials(data.view); renderParams(data.view); renderGraphs(data);
+  renderCandidates(data.view); renderPaths(data.view); renderDiff(data.view);
+  renderCounterexamples(data.view); renderEvents(data); renderRecovery(data);
+}
+
+document.getElementById('reload').onclick=()=>load(parseInt(document.getElementById('seq').value));
+document.getElementById('seq').oninput=e=>{ document.getElementById('seqLabel').textContent=`事件 ${e.target.value} / ${e.target.max}`; };
+document.getElementById('seq').onchange=e=>load(parseInt(e.target.value));
+
+document.getElementById('revise').onclick=async()=>{
+  await api(`/api/cases/${CASE}/params`,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({weakKeepsAlive:document.getElementById('weakAlive').checked,
+      internalKeepsAlive:document.getElementById('internalAlive').checked,
+      leakRetainedMinBytes:parseInt(document.getElementById('leakMin').value),
+      note:'界面参数修订'})});
+  await load();
+};
+document.getElementById('compute').onclick=async()=>{
+  await api(`/api/cases/${CASE}/compute`,{method:'POST',headers:{'Content-Type':'text/plain'},body:'界面触发重算'});
+  await load();
+};
+document.getElementById('candidates').addEventListener('click', async e=>{
+  const a=e.target.dataset.accept, r=e.target.dataset.reject, base=e.target.dataset.base;
+  if(!a && !r) return;
+  const decision=a?'ACCEPT':'REJECT'; const target=a||r;
+  const rationale=prompt(decision==='ACCEPT'?'接受该泄漏候选的依据：':'否定该候选的依据（与旧决定冲突也会保留两个事件）：','界面审阅决定');
+  if(rationale===null) return;
+  await api(`/api/cases/${CASE}/decisions`,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({targetStableId:target,decision,rationale,basedOnEventId:base,adopted:decision==='ACCEPT',note:'界面决定'})});
+  await load();
+});
+document.getElementById('uploadSnap').onclick=async()=>{
+  const msg=document.getElementById('uploadMsg'); msg.textContent='';
+  try{ await api(`/api/import-snapshot/${CASE}`,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:document.getElementById('snapText').value}); await load(); msg.textContent='导入成功'; }
+  catch(errs){ msg.textContent='导入失败：'+errs.map(e=>`${e.code||''}@${e.position||''} ${e.message||''}`).join('；'); }
+};
+document.getElementById('importBundle').onclick=async()=>{
+  const f=document.getElementById('bundleFile').files[0]; const msg=document.getElementById('bundleMsg');
+  if(!f){ msg.textContent='请先选择导出包文件'; return; }
+  const text=await f.text();
+  try{ await api('/api/import-bundle',{method:'POST',headers:{'Content-Type':'application/json'},body:text});
+    msg.textContent='导入成功：身份、分支与决定历史保持'; await load(); }
+  catch(errs){ msg.textContent='导出包无效：'+errs.map(e=>e.message).join('；'); }
+};
+
+load().catch(e=>{ document.body.insertAdjacentHTML('afterbegin','<div style="color:red;padding:10px">加载失败: '+esc(e.message)+'</div>'); });
+</script>
+</body>
+</html>

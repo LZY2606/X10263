@@ -1,0 +1,23 @@
+{
+  "snapshotId": "snap-B",
+  "sourceName": "cx-class-rename.json",
+  "parserVersion": "heap-shadow-parser/1.4.1",
+  "addressBasis": "JVM heap virtual address, hex, 0-based",
+  "sizeUnitBasis": "byte",
+  "objects": [
+    {"objectId": "q-root", "address": "0x01", "classId": "c-thread", "shallowSize": "8192 byte"},
+    {"objectId": "q-1", "address": "0x10", "classId": "c-cache", "shallowSize": "32 byte"},
+    {"objectId": "q-2", "address": "0x20", "classId": "c-cachex", "shallowSize": "4096 byte"}
+  ],
+  "classes": [
+    {"classId": "c-thread", "name": "java.lang.Thread", "classLoaderId": "cl-0"},
+    {"classId": "c-cache", "name": "com.runtime.Cache", "classLoaderId": "cl-1", "allocationSiteId": "site-2"},
+    {"classId": "c-cachex", "name": "com.runtime.CacheEntryV2", "classLoaderId": "cl-1", "allocationSiteId": "site-2"}
+  ],
+  "edges": [
+    {"edgeId": "qe-1", "fromId": "q-root", "toId": "q-1", "kind": "strong"},
+    {"edgeId": "qe-2", "fromId": "q-1", "toId": "q-2", "kind": "strong"}
+  ],
+  "roots": [{"rootId": "qr", "objectId": "q-root", "kind": "native-stack"}],
+  "incompleteChunks": []
+}

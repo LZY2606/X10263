@@ -1,0 +1,24 @@
+{
+  "snapshotId": "snap-cx-incomplete",
+  "sourceName": "cx-incomplete-object.json",
+  "parserVersion": "heap-shadow-parser/1.4.0",
+  "addressBasis": "JVM heap virtual address, hex, 0-based",
+  "sizeUnitBasis": "byte",
+  "objects": [
+    {"objectId": "i-root", "address": "0x10", "classId": "c-root", "shallowSize": "8 byte"},
+    {"objectId": "i-good", "address": "0x20", "classId": "c-leaf", "shallowSize": "128 byte"},
+    {"objectId": "i-bad", "address": "0x30", "classId": "c-leaf", "shallowSize": {"raw": "?? many", "unit": "byte"}, "incomplete": true, "incompleteReason": "记录在块边界被截断，字段流缺失 7 字节"}
+  ],
+  "classes": [
+    {"classId": "c-root", "name": "Root"},
+    {"classId": "c-leaf", "name": "Leaf"}
+  ],
+  "edges": [
+    {"edgeId": "ie-1", "fromId": "i-root", "toId": "i-good", "kind": "strong"},
+    {"edgeId": "ie-2", "fromId": "i-root", "toId": "i-bad", "kind": "strong"}
+  ],
+  "roots": [{"rootId": "ir", "objectId": "i-root", "kind": "native-stack"}],
+  "incompleteChunks": [
+    {"chunkId": "blk-7", "position": "record-stream@0x1f40", "byteOffset": 8000, "reason": "对象 i-bad 的字段流不完整", "rawSnippet": "{\"objectId\":\"i-bad\",...,\"fiel"}
+  ]
+}
